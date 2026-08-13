@@ -10,7 +10,9 @@
 <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
 <title>CVM Maturity Assessment</title>
-<!-- icons come from the native app bundle -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{
   color-scheme: light;
@@ -302,6 +304,16 @@ svg.barchart{align-self:stretch}
 .ro-vals b{font-size:15px;font-weight:680;color:var(--text-primary);font-variant-numeric:tabular-nums}
 .ro-n{color:var(--text-muted);font-variant-numeric:tabular-nums}
 
+.srcline{font-size:11.5px;color:var(--text-muted);margin-top:7px;line-height:1.4;padding-left:9px;border-left:2px solid var(--border-strong)}
+.srcline.avg{color:var(--text-secondary);border-left-color:var(--warning)}
+.srcline.other{opacity:.8}
+.warnbox{font-size:12.5px;line-height:1.45;color:var(--text-secondary);background:color-mix(in srgb,var(--warning) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--warning) 40%,transparent);border-radius:10px;padding:9px 11px;margin-top:2px}
+.checkrow{display:flex;gap:11px;align-items:flex-start;padding:10px 2px 2px;cursor:pointer}
+.checkrow input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--accent)}
+.checkrow span{font-size:14px;font-weight:600;line-height:1.35}
+.checkrow small{display:block;font-size:12px;font-weight:400;color:var(--text-muted);margin-top:2px}
+
 /* ---------- scale reference / settings ---------- */
 .scalelist{display:flex;flex-direction:column;gap:1px}
 .scaleitem{display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:1px solid var(--grid)}
@@ -419,6 +431,7 @@ svg.barchart{align-self:stretch}
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
 <input type="file" id="fileIn" accept=".json,application/json" hidden>
+<input type="file" id="mergeIn" accept=".json,application/json" multiple hidden>
 <script>
 "use strict";
 /* ============================================================
@@ -438,6 +451,7 @@ const LEVELS = [
   ["Optimised", "Continuously improved, benchmarked, a source of advantage."]
 ];
 const KEY = "cvm-assess-v1";
+const BUILD = "1.2 \u00b7 13 Aug 2026";   // shown in Setup so you can tell builds apart
 const AREA_BY_ID = {};
 DATA.areas.forEach(a => { AREA_BY_ID[a.id] = a; });
 const TOTAL_Q = DATA.areas.reduce((n, a) => n + a.questions.length, 0);
@@ -464,12 +478,15 @@ function seedFromWorkbook() {
 }
 let state = {
   client: DATA.client || "",
+  title: "",                 // assessment title/reference — distinguishes runs for the same client
   assessor: "",
   lane: "self",
   responses: seedFromWorkbook(),
+  submissions: [],           // audit trail of everything merged in
   theme: "auto",
   seeded: true
 };
+let undoSnapshot = null;     // one-step undo for the last merge
 (function load() {
   const raw = store.get();
   if (!raw) return;
@@ -486,7 +503,7 @@ function save() {
 
 /* ---------- ui state ---------- */
 const ui = { tab: "assess", area: null, dashArea: null, filter: "all", query: "", open: {}, showTable: false,
-             areaFilter: [], level: "area", pick: null };
+             areaFilter: [], level: "area", pick: null, reportAppendix: false };
 
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -497,6 +514,33 @@ function setResp(aid, i, patch) {
   state.responses[k] = Object.assign({ sa: null, ea: null, sac: "", eac: "" }, state.responses[k], patch);
   save();
 }
+
+/* A score typed here by the moderator overrides any merged average.
+   The contributing scores stay recorded so the audit trail survives. */
+function setScore(aid, i, lane, v) {
+  const patch = lane === "self" ? { sa: v, saManual: v != null } : { ea: v, eaManual: v != null };
+  setResp(aid, i, patch);
+}
+
+const SRC = { self: "saSrc", external: "eaSrc" };
+const srcOf = (aid, i, lane) => { const r = resp(aid, i); return (r && r[SRC[lane]]) || []; };
+
+/* Rendered wherever the notes for a question appear — the app, the CSV and the
+   report — so the working behind an averaged score is always visible. */
+function mergeNote(aid, i, lane) {
+  const src = srcOf(aid, i, lane), r = resp(aid, i);
+  if (!src.length) return "";
+  const manual = r && (lane === "self" ? r.saManual : r.eaManual);
+  const who = src.map(c => (c.by || "unnamed") + " " + c.v).join(", ");
+  if (src.length === 1) return "Scored by " + who;
+  const v = lane === "self" ? r.sa : r.ea;
+  const mean = lane === "self" ? r.saMean : r.eaMean;
+  if (manual) return "Merged from " + src.length + " assessors (" + who + "); set to " + v + " by moderator";
+  const exact = mean == null ? v : Math.round(mean * 100) / 100;
+  return "Averaged from " + src.length + " assessors (" + who + ") \u2192 " + exact +
+         (exact !== v ? ", rounded down to " + v : "");
+}
+const isAveraged = (aid, i, lane) => srcOf(aid, i, lane).length > 1;
 const val = (aid, i, lane) => { const r = resp(aid, i); return r ? (lane === "self" ? r.sa : r.ea) : null; };
 const cmt = (aid, i, lane) => { const r = resp(aid, i); return r ? (lane === "self" ? (r.sac || "") : (r.eac || "")) : ""; };
 const laneName = l => l === "self" ? "Self assessment" : "External assessment";
@@ -611,6 +655,8 @@ function laneSwitchHTML() {
   </div>`;
 }
 
+const AVG_IN_AREA = a => a.questions.filter((q, i) => isAveraged(a.id, i, "self") || isAveraged(a.id, i, "external")).length;
+
 function matches(q, aid, i) {
   if (ui.query) {
     const t = (q.q + " " + q.subject).toLowerCase();
@@ -623,6 +669,7 @@ function matches(q, aid, i) {
     const s = val(aid, i, "self"), e = val(aid, i, "external");
     if (s == null || e == null || Math.abs(e - s) < 2) return false;
   }
+  if (ui.filter === "avg" && !isAveraged(aid, i, "self") && !isAveraged(aid, i, "external")) return false;
   return true;
 }
 
@@ -655,6 +702,7 @@ function areaDetailHTML(a) {
     <button class="chip" data-filter="todo" aria-pressed="${ui.filter === "todo"}">Unanswered ${st.n - done}</button>
     <button class="chip" data-filter="done" aria-pressed="${ui.filter === "done"}">Answered ${done}</button>
     <button class="chip" data-filter="gap" aria-pressed="${ui.filter === "gap"}">Gap &ge; 2</button>
+    ${AVG_IN_AREA(a) ? `<button class="chip" data-filter="avg" aria-pressed="${ui.filter === "avg"}">Averaged ${AVG_IN_AREA(a)}</button>` : ""}
   </div>
   ${nShown === 0
     ? `<div class="empty"><div class="big">Nothing to show</div><div>No questions match this filter or search.</div></div>`
@@ -682,6 +730,7 @@ function qCardHTML(a, q) {
   const i = q.__i, mine = val(a.id, i, state.lane), other = state.lane === "self" ? "external" : "self";
   const otherV = val(a.id, i, other), myC = cmt(a.id, i, state.lane), otherC = cmt(a.id, i, other);
   const lvl = mine != null ? LEVELS[mine - 1] : null;
+  const myNote = mergeNote(a.id, i, state.lane), otherNote = mergeNote(a.id, i, other);
   return `<div class="qcard lane-${state.lane}" data-q="${a.id}|${i}" id="q-${a.id}-${i}">
     <span class="subjtag">${esc(q.subject)}</span>
     <div class="qhead"><span class="qnum">Q${i + 1}</span><div class="qtext">${esc(q.q)}</div></div>
@@ -692,6 +741,8 @@ function qCardHTML(a, q) {
       <div class="levelname ${lvl ? "" : "empty"}">${lvl ? esc(mine + " · " + lvl[0]) : "Not yet scored"}</div>
       ${otherV != null ? `<div class="otherlane"><i class="swatch ${other === "self" ? "sw1" : "sw2"}"></i>${other === "self" ? "Self" : "External"} ${otherV}</div>` : ""}
     </div>
+    ${myNote ? `<div class="srcline ${isAveraged(a.id, i, state.lane) ? "avg" : ""}">${esc(myNote)}</div>` : ""}
+    ${otherNote ? `<div class="srcline other">${esc(other === "self" ? "Self" : "External")}: ${esc(otherNote)}</div>` : ""}
     <div class="qactions">
       <button class="minibtn ${myC ? "on" : ""}" data-act="comment">&#9998; ${myC ? "Edit note" : "Add note"}</button>
       ${mine != null ? `<button class="minibtn" data-act="clear">Clear score</button>` : ""}
@@ -790,8 +841,11 @@ function wrapLabel(s, maxChars, maxLines) {
    RADAR
    ============================================================ */
 /* Spoke labels only fit when the plot is wide. On a phone the numbered key
-   below the radar is clearer than seven truncated names crowding the edge. */
-const numberedFor = N => N > 8 || window.innerWidth < 480;
+   below the radar is clearer than seven truncated names crowding the edge.
+   The report always numbers, so its chart looks the same whichever device
+   generated it and always matches the printed key. */
+let REPORT_MODE = false;
+const numberedFor = N => REPORT_MODE || N > 8 || window.innerWidth < 480;
 
 function radarSVG(cats, W) {
   const N = cats.length;
@@ -1057,28 +1111,245 @@ function drawCharts(cats, sorted, radarTooMany) {
 }
 
 /* ============================================================
+   MERGE — combining assessments from several assessors
+
+   Rules, as specified:
+     • one side blank, other answered  → take the answer
+     • both answered                   → average, and record both source
+                                          scores in that question's notes
+     • three or more answers           → mean of all of them (the running
+                                          contribution list is re-averaged,
+                                          so merge order never matters)
+     • a score set by hand here        → wins over the average, but the
+                                          contributions stay on record
+
+   Notes never overwrite each other; each contributor's text is kept and
+   attributed. The averaging working is derived, not written into the note
+   text, so re-merging can't duplicate or corrupt what someone wrote.
+   ============================================================ */
+
+const norm = s => String(s == null ? "" : s).trim().toLowerCase().replace(/\s+/g, " ");
+
+/* Where a value already exists with no recorded contributor — the workbook
+   seed, or answers typed on this device — credit it before merging so the
+   average includes it. */
+function seedContribution(r, lane, who) {
+  const key = SRC[lane], v = lane === "self" ? r.sa : r.ea;
+  if (r[key] && r[key].length) return;
+  if (v == null) { r[key] = []; return; }
+  r[key] = [{ by: who, v: v }];
+}
+
+/* Every score stays a valid 1-8 level: an average that lands between levels is
+   rounded DOWN, the cautious reading. The true mean is kept for the note. */
+function recompute(r, lane) {
+  const src = r[SRC[lane]] || [];
+  const manual = lane === "self" ? r.saManual : r.eaManual;
+  if (manual || !src.length) return;
+  const mean = src.reduce((t, c) => t + c.v, 0) / src.length;
+  const v = Math.floor(mean);
+  if (lane === "self") { r.sa = v; r.saMean = mean; } else { r.ea = v; r.eaMean = mean; }
+}
+
+function appendNote(r, lane, text, who) {
+  if (!text) return;
+  const key = lane === "self" ? "sac" : "eac";
+  const existing = r[key] || "";
+  const stamped = who ? who + ": " + text : text;
+  if (existing.includes(text)) return;              // idempotent on re-import
+  r[key] = existing ? existing + "\n\n" + stamped : stamped;
+}
+
+/* Returns a summary of what the file contributed, for the audit trail. */
+function mergeSubmission(incoming, filename) {
+  const who = (incoming.assessor || "").trim() || "Unnamed assessor";
+  const mine = (state.assessor || "").trim() || "This device";
+  const out = { filled: 0, averaged: 0, agreed: 0, notes: 0, selfN: 0, extN: 0, skipped: 0 };
+
+  Object.keys(incoming.responses || {}).forEach(k => {
+    const their = incoming.responses[k];
+    if (!their) return;
+    const parts = k.split("|");
+    const aid = parts[0], i = Number(parts[1]);
+    if (!AREA_BY_ID[aid] || !AREA_BY_ID[aid].questions[i]) { out.skipped++; return; }
+
+    if (!state.responses[k]) state.responses[k] = { sa: null, ea: null, sac: "", eac: "" };
+    const r = state.responses[k];
+
+    ["self", "external"].forEach(lane => {
+      const tv = lane === "self" ? their.sa : their.ea;
+      const tn = lane === "self" ? (their.sac || "") : (their.eac || "");
+
+      if (tv != null) {
+        if (lane === "self") out.selfN++; else out.extN++;
+        seedContribution(r, lane, mine);
+        const src = r[SRC[lane]];
+        const already = src.some(c => c.by === who && c.v === tv);
+        if (!already) {
+          if (!src.length) out.filled++;
+          else if (src.every(c => c.v === tv)) out.agreed++;
+          else out.averaged++;
+          src.push({ by: who, v: tv });
+        }
+        recompute(r, lane);
+      }
+
+      if (tn) { appendNote(r, lane, tn, who); out.notes++; }
+    });
+  });
+
+  return out;
+}
+
+function mergeFiles(files, onDone) {
+  undoSnapshot = JSON.stringify(state);        // one-step undo
+  const results = [];
+  let pending = files.length;
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const sub = parsed && parsed.state ? parsed.state : parsed;
+        if (!sub || typeof sub.responses !== "object") throw new Error("not a CVM assessment export");
+
+        const summary = mergeSubmission(sub, file.name);
+        state.submissions.push({
+          assessor: (sub.assessor || "").trim() || "Unnamed assessor",
+          client: sub.client || "",
+          title: sub.title || "",
+          file: file.name,
+          at: new Date().toISOString(),
+          exported: parsed && parsed.exported ? parsed.exported : "",
+          summary: summary
+        });
+        results.push({ file: file.name, ok: true, assessor: sub.assessor, summary });
+      } catch (err) {
+        results.push({ file: file.name, ok: false, error: err.message || "could not be read" });
+      }
+      if (--pending === 0) { save(); onDone(results); }
+    };
+    reader.onerror = () => {
+      results.push({ file: file.name, ok: false, error: "could not be read" });
+      if (--pending === 0) { save(); onDone(results); }
+    };
+    reader.readAsText(file);
+  });
+}
+
+/* Read the labels off the chosen files before merging, so a submission from a
+   different client or a different assessment can be queried rather than
+   silently folded in. */
+function inspectFiles(files, onDone) {
+  const info = [];
+  let pending = files.length;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const sub = parsed && parsed.state ? parsed.state : parsed;
+        info.push({ file: file.name, client: sub.client || "", title: sub.title || "", assessor: sub.assessor || "" });
+      } catch (e) { info.push({ file: file.name, unreadable: true }); }
+      if (--pending === 0) onDone(info);
+    };
+    reader.onerror = () => { info.push({ file: file.name, unreadable: true }); if (--pending === 0) onDone(info); };
+    reader.readAsText(file);
+  });
+}
+
+function mismatchWarning(info) {
+  const bad = info.filter(f => !f.unreadable &&
+    (norm(f.client) !== norm(state.client) || norm(f.title) !== norm(state.title)));
+  if (!bad.length) return null;
+  const lines = bad.map(f => "• " + f.file + "\n    " +
+    (f.client || "no client") + " — " + (f.title || "no title"));
+  return "These submissions are labelled differently from this assessment:\n\n" +
+    lines.join("\n") +
+    "\n\nThis assessment is:\n    " + (state.client || "no client") + " — " + (state.title || "no title") +
+    "\n\nMerge them anyway?";
+}
+
+function contributorList() {
+  const seen = new Map();
+  state.submissions.forEach(s => {
+    const cur = seen.get(s.assessor) || { name: s.assessor, selfN: 0, extN: 0, files: 0 };
+    cur.selfN += (s.summary && s.summary.selfN) || 0;
+    cur.extN += (s.summary && s.summary.extN) || 0;
+    cur.files += 1;
+    seen.set(s.assessor, cur);
+  });
+  return [...seen.values()];
+}
+
+function averagedQuestions() {
+  const out = [];
+  DATA.areas.forEach(a => a.questions.forEach((q, i) => {
+    ["self", "external"].forEach(lane => {
+      if (isAveraged(a.id, i, lane)) out.push({ a, q, i, lane, src: srcOf(a.id, i, lane), v: val(a.id, i, lane) });
+    });
+  }));
+  return out;
+}
+
+/* ============================================================
    SETUP / EXPORT
    ============================================================ */
 function renderMore() {
+  const AVG_COUNT = averagedQuestions().length;
   $("#view-more").innerHTML = `
   <div class="card">
     <div class="card-title">Assessment details</div>
-    <div class="card-note">Shown on the dashboard and included in every export.</div>
+    <div class="card-note">The title is what keeps separate assessments apart when you merge &mdash; two engagements for the same client need different titles.</div>
     <div class="field"><label for="fClient">Client</label><input id="fClient" value="${esc(state.client)}" placeholder="Client name" autocapitalize="words"></div>
-    <div class="field"><label for="fAssessor">Assessor</label><input id="fAssessor" value="${esc(state.assessor)}" placeholder="Your name" autocapitalize="words"></div>
+    <div class="field"><label for="fTitle">Assessment title / reference</label><input id="fTitle" value="${esc(state.title)}" placeholder="e.g. 2026 Baseline Review" autocapitalize="sentences"></div>
+    <div class="field"><label for="fAssessor">Your name (the assessor)</label><input id="fAssessor" value="${esc(state.assessor)}" placeholder="Who is answering" autocapitalize="words"></div>
     <div class="field"><label for="fLane">Currently completing</label>
       <select id="fLane"><option value="self" ${state.lane === "self" ? "selected" : ""}>Self assessment</option><option value="external" ${state.lane === "external" ? "selected" : ""}>External assessment</option></select>
+    </div>
+    ${!state.assessor ? `<div class="warnbox">Add your name before exporting &mdash; it is what identifies your scores when they are combined with other assessors'.</div>` : ""}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Combine assessments</div>
+    <div class="card-note">Import the JSON files your assessors send back. Blanks are filled from whoever answered; where two people answered the same question the scores are averaged and both are recorded in that question's notes.</div>
+    <div class="btnrow">
+      <button class="bigbtn primary" data-act="merge">Import &amp; combine submissions</button>
+      ${undoSnapshot ? `<button class="bigbtn" data-act="undomerge">Undo last import</button>` : ""}
+    </div>
+    ${state.submissions.length ? `
+      <div class="section-label" style="margin:16px 2px 6px">Contributors</div>
+      <div class="scalelist">
+        ${contributorList().map(c => `<div class="scaleitem">
+          <div class="d"><strong>${esc(c.name)}</strong>
+            <span>${c.selfN} self &middot; ${c.extN} external${c.files > 1 ? " &middot; " + c.files + " files" : ""}</span></div>
+        </div>`).join("")}
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:9px">${state.submissions.length} submission${state.submissions.length === 1 ? "" : "s"} merged.
+        ${AVG_COUNT ? `<b>${AVG_COUNT}</b> question${AVG_COUNT === 1 ? " was" : "s were"} answered by more than one assessor and averaged &mdash; review them under <b>Assess ▸ Averaged</b>.` : ""}</div>
+    ` : `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Nothing merged yet.</div>`}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Send to the client</div>
+    <div class="card-note">A complete report: summary, the radar and bar charts, area and subject tables, the largest divergences, and who assessed what.</div>
+    <div class="btnrow">
+      <button class="bigbtn primary" data-act="report">Create PDF report</button>
+      <label class="checkrow"><input type="checkbox" id="fAppendix" ${ui.reportAppendix ? "checked" : ""}>
+        <span>Include every question and note as an appendix<small>Adds ${TOTAL_Q} rows &mdash; thorough, but a much longer document</small></span></label>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">Export &amp; backup</div>
-    <div class="card-note">CSV opens in Excel with the same columns as the comparison workbook. JSON is a full backup you can reload here.</div>
+    <div class="card-note">Send the JSON to whoever is consolidating; it is also your backup. CSV opens in Excel with the same columns as the comparison workbook.</div>
     <div class="btnrow">
-      <button class="bigbtn primary" data-act="csv">Export CSV for Excel</button>
-      <button class="bigbtn" data-act="json">Export JSON backup</button>
-      <button class="bigbtn" data-act="import">Restore from JSON backup</button>
+      <button class="bigbtn primary" data-act="json">Export my assessment (JSON)</button>
+      <button class="bigbtn" data-act="csv">Export CSV for Excel</button>
+      <button class="bigbtn" data-act="import">Replace everything from a backup</button>
     </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:9px">Replacing overwrites this device's answers entirely. To add someone else's work to your own, use <b>Combine assessments</b> above.</div>
   </div>
 
   <div class="card">
@@ -1118,8 +1389,9 @@ function renderMore() {
       <button class="bigbtn" data-act="reseed">Reload workbook data</button>
     </div>
   </div>
-  <div style="text-align:center;font-size:11.5px;color:var(--text-muted);padding:6px 0 4px">
-    ${TOTAL_Q} questions &middot; ${DATA.areas.length} areas &middot; from CVM Maturity Assessment Comparison v1.0
+  <div style="text-align:center;font-size:11.5px;color:var(--text-muted);padding:6px 0 4px;line-height:1.6">
+    ${TOTAL_Q} questions &middot; ${DATA.areas.length} areas &middot; from CVM Maturity Assessment Comparison v1.0<br>
+    <span style="font-variant-numeric:tabular-nums">Build ${BUILD}</span> &middot; ${NATIVE ? "native iOS" : INSTALLED ? "installed web app" : "browser"}
   </div>`;
 }
 
@@ -1128,16 +1400,33 @@ function csvCell(v) {
   const s = v == null ? "" : String(v);
   return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
+/* The notes columns carry the assessor's text plus, where a score came from more
+   than one assessor, the working: who scored what and the resulting average. */
+function notesFor(aid, i, lane) {
+  return [cmt(aid, i, lane), mergeNote(aid, i, lane)].filter(Boolean).join(" | ");
+}
 function buildCSV() {
-  const rows = [["Client", "Assessor", "Assessment Area", "Assessment Subject", "Question",
-    "Self Assessment", "External Assessment", "Gap (Ext-Self)", "Self Assessment Comments", "External Assessment Comments"]];
+  const rows = [["Client", "Assessment Title", "Consolidated By", "Assessment Area", "Assessment Subject", "Question",
+    "Self Assessment", "External Assessment", "Gap (Ext-Self)",
+    "Self Assessment Comments", "External Assessment Comments", "Self Assessors", "External Assessors"]];
   DATA.areas.forEach(a => a.questions.forEach((q, i) => {
     const s = val(a.id, i, "self"), e = val(a.id, i, "external");
-    rows.push([state.client, state.assessor, a.name, q.subject, q.q, s == null ? "" : s, e == null ? "" : e,
-      (s != null && e != null) ? e - s : "", cmt(a.id, i, "self"), cmt(a.id, i, "external")]);
+    const who = lane => srcOf(a.id, i, lane).map(c => c.by + " " + c.v).join("; ");
+    rows.push([state.client, state.title, state.assessor, a.name, q.subject, q.q,
+      s == null ? "" : s, e == null ? "" : e, (s != null && e != null) ? Math.round((e - s) * 10) / 10 : "",
+      notesFor(a.id, i, "self"), notesFor(a.id, i, "external"), who("self"), who("external")]);
   }));
   return "﻿" + rows.map(r => r.map(csvCell).join(",")).join("\r\n");
 }
+/* Empty fields are dropped rather than slugged to a placeholder word. */
+function nameParts(prefix) {
+  const parts = [prefix];
+  if (state.client) parts.push(slug(state.client));
+  if (state.title) parts.push(slug(state.title));
+  parts.push(stamp());
+  return parts.join("-");
+}
+function reportName(ext) { return nameParts("cvm") + "." + ext; }
 function slug(s) { return (s || "assessment").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "assessment"; }
 function stamp() { const d = new Date(); const p = n => String(n).padStart(2, "0"); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()); }
 const INSTALLED = (() => {
@@ -1174,6 +1463,345 @@ async function download(text, filename, mime) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   toast("Saved " + filename);
+}
+
+/* ============================================================
+   CLIENT REPORT
+
+   Builds a standalone, print-ready HTML document and turns it into a PDF.
+   The charts are the same radar and bar code used on the Dashboard, rendered
+   with literal hex colours instead of CSS variables, because the report is a
+   separate document with its own stylesheet and is always light-themed —
+   a dark-mode PDF would be wrong on paper.
+
+   Native app  → handed to Swift, which renders it with WKWebView.createPDF
+                 and opens the share sheet.
+   Browser/PWA → opened in a new window and printed (Save as PDF).
+   ============================================================ */
+
+const REPORT_PALETTE = {
+  s1: "#2a78d6", s2: "#eb6834",
+  grid: "#e2e0da", ink: "#0b0b0b", ink2: "#52514e", ink3: "#7b7a74",
+  surface: "#ffffff", good: "#0ca30c", bad: "#d03b3b"
+};
+
+/* The chart builders emit var(--…) references; for the report those become
+   literal colours so the SVG stands alone. */
+function literalise(svg) {
+  const map = {
+    "var(--series-1)": REPORT_PALETTE.s1,
+    "var(--series-2)": REPORT_PALETTE.s2,
+    "var(--grid)": REPORT_PALETTE.grid,
+    "var(--text-primary)": REPORT_PALETTE.ink,
+    "var(--text-secondary)": REPORT_PALETTE.ink2,
+    "var(--text-muted)": REPORT_PALETTE.ink3,
+    "var(--surface-1)": REPORT_PALETTE.surface,
+    "var(--surface-0)": "#f4f3f0"
+  };
+  return Object.keys(map).reduce((out, k) => out.split(k).join(map[k]), svg);
+}
+
+function reportDate() {
+  const d = new Date();
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function reportStats() {
+  const sa = [], ea = [];
+  let both = 0;
+  DATA.areas.forEach(a => a.questions.forEach((q, i) => {
+    const s = val(a.id, i, "self"), e = val(a.id, i, "external");
+    if (s != null) sa.push(s);
+    if (e != null) ea.push(e);
+    if (s != null && e != null) both++;
+  }));
+  const avg = x => x.length ? x.reduce((p, c) => p + c, 0) / x.length : null;
+  const oSa = avg(sa), oEa = avg(ea);
+  return { saN: sa.length, eaN: ea.length, both, sa: oSa, ea: oEa,
+           gap: (oSa != null && oEa != null) ? oEa - oSa : null };
+}
+
+function levelFor(v) {
+  if (v == null) return "—";
+  const i = Math.max(1, Math.min(8, Math.round(v)));
+  return LEVELS[i - 1][0];
+}
+
+function gapCell(g) {
+  if (g == null) return '<td class="num">—</td>';
+  const r = Math.round(g * 10) / 10;
+  if (Math.abs(r) < 0.05) return '<td class="num">0.0</td>';
+  const cls = r > 0 ? "up" : "down";
+  return `<td class="num ${cls}">${r > 0 ? "+" : ""}${r.toFixed(1)}</td>`;
+}
+
+function buildReportHTML() {
+  const o = reportStats();
+  const areaCats = DATA.areas.map(a => ({ key: a.id, name: a.name, area: a.name, aid: a.id, st: areaStats(a) }));
+  const byWeakest = areaCats.slice().sort((x, y) => (x.st.sa == null ? 99 : x.st.sa) - (y.st.sa == null ? 99 : y.st.sa));
+
+  // charts: fixed widths that suit A4 at ~96dpi with 18mm margins
+  const savedPick = ui.pick;
+  ui.pick = null;
+  REPORT_MODE = true;
+  const radar = literalise(radarSVG(areaCats, 460));
+  const radarKey = areaCats.map((c, i) => `<li><b>${i + 1}</b> ${esc(c.name)}</li>`).join("");
+  const bars = literalise(barsSVG(byWeakest, 660));
+  REPORT_MODE = false;
+  ui.pick = savedPick;
+
+  const gaps = [];
+  DATA.areas.forEach(a => a.questions.forEach((q, i) => {
+    const s = val(a.id, i, "self"), e = val(a.id, i, "external");
+    if (s == null || e == null || e === s) return;
+    gaps.push({ area: a.name, subj: q.subject, q: q.q, s, e, g: e - s });
+  }));
+  gaps.sort((x, y) => Math.abs(y.g) - Math.abs(x.g));
+  const topGaps = gaps.slice(0, 15);
+
+  const contributors = contributorList();
+  const averaged = averagedQuestions();
+
+  const subjectSections = DATA.areas.map(a => {
+    const subs = subjectsOf(a).map(sx => ({ name: sx.name, st: stats(sx.qs, a.id) }))
+      .sort((x, y) => (x.st.sa == null ? 99 : x.st.sa) - (y.st.sa == null ? 99 : y.st.sa));
+    const st = areaStats(a);
+    return `<section class="area-block">
+      <h3>${esc(a.name)}</h3>
+      <p class="lead">Self ${fmt(st.sa)} &middot; External ${fmt(st.ea)} &middot;
+        ${st.gap == null ? "not comparable" : (Math.abs(st.gap) < 0.05 ? "aligned" :
+          (st.gap > 0 ? "external " + fmt(st.gap) + " higher" : "external " + fmt(Math.abs(st.gap)) + " lower"))}
+        &middot; ${st.n} questions</p>
+      <table>
+        <thead><tr><th>Subject</th><th class="num">Self</th><th class="num">External</th><th class="num">Gap</th><th class="num">Q</th></tr></thead>
+        <tbody>${subs.map(sx => `<tr>
+          <td>${esc(sx.name)}</td>
+          <td class="num">${fmt(sx.st.sa)}</td>
+          <td class="num">${fmt(sx.st.ea)}</td>
+          ${gapCell(sx.st.gap)}
+          <td class="num">${sx.st.n}</td></tr>`).join("")}</tbody>
+      </table>
+    </section>`;
+  }).join("");
+
+  const appendix = !ui.reportAppendix ? "" : `
+    <section class="page-break">
+      <h2>Appendix &mdash; all questions</h2>
+      <p class="lead">Every question with its consolidated scores and the notes recorded against it.</p>
+      ${DATA.areas.map(a => `
+        <h3>${esc(a.name)}</h3>
+        <table class="qtable">
+          <thead><tr><th>Question</th><th class="num">Self</th><th class="num">Ext</th><th>Notes</th></tr></thead>
+          <tbody>${a.questions.map((q, i) => {
+            const notes = [notesFor(a.id, i, "self"), notesFor(a.id, i, "external")].filter(Boolean).join(" — ");
+            return `<tr>
+              <td><span class="subj">${esc(q.subject)}</span>${esc(q.q)}</td>
+              <td class="num">${val(a.id, i, "self") == null ? "—" : val(a.id, i, "self")}</td>
+              <td class="num">${val(a.id, i, "external") == null ? "—" : val(a.id, i, "external")}</td>
+              <td class="notes">${esc(notes)}</td></tr>`;
+          }).join("")}</tbody>
+        </table>`).join("")}
+    </section>`;
+
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>${esc(state.title || "CVM Maturity Assessment")} — ${esc(state.client || "")}</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  * { box-sizing: border-box; }
+  body { margin:0; color:${REPORT_PALETTE.ink}; background:#fff;
+    font:400 10.5pt/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  h1 { font-size:23pt; line-height:1.15; letter-spacing:-.01em; margin:0 0 4pt; }
+  h2 { font-size:14pt; margin:0 0 6pt; padding-bottom:4pt; border-bottom:1.5px solid ${REPORT_PALETTE.ink}; }
+  h3 { font-size:11.5pt; margin:14pt 0 4pt; }
+  p { margin:0 0 7pt; }
+  .lead { color:${REPORT_PALETTE.ink2}; font-size:9.5pt; margin-bottom:8pt; }
+  .cover { padding:34mm 0 0; }
+  .cover .kicker { font-size:9pt; letter-spacing:.14em; text-transform:uppercase; color:${REPORT_PALETTE.ink3}; font-weight:700; margin-bottom:10pt; }
+  .cover .client { font-size:14pt; font-weight:600; color:${REPORT_PALETTE.ink2}; margin:2pt 0 22pt; }
+  .cover dl { display:grid; grid-template-columns:auto 1fr; gap:5pt 16pt; font-size:10pt; margin:0; }
+  .cover dt { color:${REPORT_PALETTE.ink3}; }
+  .cover dd { margin:0; font-weight:600; }
+  section { margin-bottom:16pt; }
+  .page-break { page-break-before:always; }
+  .avoid-break { page-break-inside:avoid; }
+  .kpis { display:flex; gap:10pt; margin:10pt 0 14pt; }
+  .kpi { flex:1; border:1px solid ${REPORT_PALETTE.grid}; border-radius:6pt; padding:9pt 11pt; }
+  .kpi .l { font-size:8pt; letter-spacing:.08em; text-transform:uppercase; color:${REPORT_PALETTE.ink3}; font-weight:700; display:flex; align-items:center; gap:5pt; }
+  .kpi .l i { width:8pt; height:8pt; border-radius:2pt; display:inline-block; }
+  .kpi .v { font-size:21pt; font-weight:700; line-height:1.1; margin-top:3pt; font-variant-numeric:tabular-nums; }
+  .kpi .v small { font-size:10pt; font-weight:500; color:${REPORT_PALETTE.ink3}; }
+  .kpi .c { font-size:8.5pt; color:${REPORT_PALETTE.ink2}; }
+  table { width:100%; border-collapse:collapse; font-size:9.5pt; margin-bottom:6pt; }
+  th, td { text-align:left; padding:4.5pt 5pt; border-bottom:.75px solid ${REPORT_PALETTE.grid}; vertical-align:top; }
+  th { font-size:8pt; letter-spacing:.05em; text-transform:uppercase; color:${REPORT_PALETTE.ink3}; font-weight:700;
+       border-bottom:1px solid ${REPORT_PALETTE.ink3}; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.num.up { color:${REPORT_PALETTE.good}; font-weight:700; }
+  td.num.down { color:${REPORT_PALETTE.bad}; font-weight:700; }
+  thead { display:table-header-group; }
+  tr { page-break-inside:avoid; }
+  .legend { display:flex; gap:16pt; font-size:9pt; color:${REPORT_PALETTE.ink2}; margin:0 0 8pt; }
+  .legend span { display:inline-flex; align-items:center; gap:5pt; }
+  .legend i { width:9pt; height:9pt; border-radius:2pt; display:inline-block; }
+  .chart { text-align:center; margin:6pt 0 4pt; page-break-inside:avoid; }
+  .chart svg { max-width:100%; height:auto; }
+  .rkey { list-style:none; padding:0; margin:6pt 0 0; column-count:2; column-gap:20pt; font-size:9pt; color:${REPORT_PALETTE.ink2}; }
+  .rkey li { margin-bottom:2.5pt; }
+  .rkey b { color:${REPORT_PALETTE.ink3}; display:inline-block; min-width:12pt; }
+  .area-block { page-break-inside:avoid; margin-bottom:12pt; }
+  .qtable td:first-child { width:52%; }
+  .qtable .subj { display:block; font-size:7.5pt; letter-spacing:.04em; text-transform:uppercase; color:${REPORT_PALETTE.ink3}; }
+  .qtable .notes { font-size:8.5pt; color:${REPORT_PALETTE.ink2}; }
+  .foot { font-size:8pt; color:${REPORT_PALETTE.ink3}; border-top:.75px solid ${REPORT_PALETTE.grid}; padding-top:6pt; margin-top:14pt; }
+  ul.plain { margin:0 0 8pt; padding-left:14pt; }
+  ul.plain li { margin-bottom:3pt; }
+</style></head>
+<body>
+
+<div class="cover">
+  <div class="kicker">Contract Value Management</div>
+  <h1>${esc(state.title || "Maturity Assessment")}</h1>
+  <div class="client">${esc(state.client || "")}</div>
+  <dl>
+    <dt>Report date</dt><dd>${reportDate()}</dd>
+    <dt>Questions assessed</dt><dd>${o.saN} self, ${o.eaN} external, of ${TOTAL_Q}</dd>
+    <dt>Contributors</dt><dd>${contributors.length ? contributors.map(c => esc(c.name)).join(", ") : esc(state.assessor || "—")}</dd>
+    <dt>Consolidated by</dt><dd>${esc(state.assessor || "—")}</dd>
+  </dl>
+</div>
+
+<section class="page-break">
+  <h2>Executive summary</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="l"><i style="background:${REPORT_PALETTE.s1}"></i>Self assessment</div>
+      <div class="v">${fmt(o.sa)}<small> / 8</small></div><div class="c">${levelFor(o.sa)}</div></div>
+    <div class="kpi"><div class="l"><i style="background:${REPORT_PALETTE.s2}"></i>External assessment</div>
+      <div class="v">${fmt(o.ea)}<small> / 8</small></div><div class="c">${levelFor(o.ea)}</div></div>
+    <div class="kpi"><div class="l">Alignment</div>
+      <div class="v">${o.gap == null ? "—" : (o.gap > 0 ? "+" : "") + fmt(o.gap)}</div>
+      <div class="c">${o.both} of ${TOTAL_Q} comparable</div></div>
+  </div>
+  <p>${o.gap == null
+      ? "Only one of the two assessments has been completed, so no comparison is available yet."
+      : Math.abs(o.gap) < 0.25
+        ? `Overall maturity sits at <b>${fmt(o.sa)} of 8</b> (${levelFor(o.sa)}). The self and external assessments broadly agree, which suggests the organisation has a realistic view of its own capability.`
+        : o.gap < 0
+          ? `Overall maturity sits at <b>${fmt(o.ea)} of 8</b> on the external assessment against <b>${fmt(o.sa)}</b> self-assessed. The external view is <b>${fmt(Math.abs(o.gap))} points lower</b>, indicating the organisation rates itself above the evidence available — the gap itself is a finding, since remediation plans built on the self-assessment would start from an optimistic baseline.`
+          : `Overall maturity sits at <b>${fmt(o.ea)} of 8</b> on the external assessment against <b>${fmt(o.sa)}</b> self-assessed. The external view is <b>${fmt(o.gap)} points higher</b>, indicating capability that exists but is under-recognised internally — often a sign that good practice is present but not documented or credited.`}</p>
+  <p><b>Weakest areas.</b> ${byWeakest.slice(0, 3).map(c => esc(c.name) + " (" + fmt(c.st.sa) + ")").join(", ")} score lowest on the self assessment and are the natural focus for improvement.</p>
+  ${averaged.length ? `<p><b>Consolidation.</b> ${contributors.length} assessors contributed. ${averaged.length} question${averaged.length === 1 ? " was" : "s were"} answered by more than one assessor; those scores are the average of the contributions, rounded down to the nearest level. The contributing scores are recorded against each question.</p>` : ""}
+</section>
+
+<section class="page-break avoid-break">
+  <h2>Maturity profile</h2>
+  <p class="lead">Self versus external across the ${DATA.areas.length} assessment areas. The outer ring is 8, the top of the scale.</p>
+  <div class="legend">
+    <span><i style="background:${REPORT_PALETTE.s1}"></i>Self assessment</span>
+    <span><i style="background:${REPORT_PALETTE.s2}"></i>External assessment</span>
+  </div>
+  <div class="avoid-break">
+    <div class="chart">${radar}</div>
+    <ol class="rkey">${radarKey}</ol>
+  </div>
+</section>
+
+<section class="page-break">
+  <h2>Scores by assessment area</h2>
+  <p class="lead">Lowest maturity first.</p>
+  <div class="legend">
+    <span><i style="background:${REPORT_PALETTE.s1}"></i>Self assessment</span>
+    <span><i style="background:${REPORT_PALETTE.s2}"></i>External assessment</span>
+  </div>
+  <div class="chart">${bars}</div>
+  <table>
+    <thead><tr><th>Assessment area</th><th class="num">Self</th><th class="num">External</th><th class="num">Gap</th><th class="num">Questions</th></tr></thead>
+    <tbody>
+      ${byWeakest.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${fmt(c.st.sa)}</td><td class="num">${fmt(c.st.ea)}</td>${gapCell(c.st.gap)}<td class="num">${c.st.n}</td></tr>`).join("")}
+      <tr><td><b>All areas</b></td><td class="num"><b>${fmt(o.sa)}</b></td><td class="num"><b>${fmt(o.ea)}</b></td>${gapCell(o.gap)}<td class="num"><b>${TOTAL_Q}</b></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="page-break">
+  <h2>Detail by subject</h2>
+  <p class="lead">Every subject within each assessment area, weakest first.</p>
+  ${subjectSections}
+</section>
+
+${topGaps.length ? `<section class="page-break">
+  <h2>Largest divergences</h2>
+  <p class="lead">Questions where the self and external assessments differ most. These are the conversations worth having first.</p>
+  <table>
+    <thead><tr><th>Question</th><th class="num">Self</th><th class="num">Ext</th><th class="num">Gap</th></tr></thead>
+    <tbody>${topGaps.map(x => `<tr>
+      <td><span class="subj" style="display:block;font-size:7.5pt;letter-spacing:.04em;text-transform:uppercase;color:${REPORT_PALETTE.ink3}">${esc(x.area)} &middot; ${esc(x.subj)}</span>${esc(x.q)}</td>
+      <td class="num">${x.s}</td><td class="num">${x.e}</td>${gapCell(x.g)}</tr>`).join("")}</tbody>
+  </table>
+</section>` : ""}
+
+<section${ui.reportAppendix ? "" : ' class="page-break"'}>
+  <h2>Method and scale</h2>
+  <p class="lead">How to read the scores in this report.</p>
+  <table>
+    <thead><tr><th class="num">Level</th><th>Name</th><th>Meaning</th></tr></thead>
+    <tbody>${LEVELS.map((L, i) => `<tr><td class="num">${i + 1}</td><td><b>${esc(L[0])}</b></td><td>${esc(L[1])}</td></tr>`).join("")}</tbody>
+  </table>
+  <h3>Consolidation</h3>
+  <ul class="plain">
+    <li>Each question is answered once per assessment by a single assessor; unanswered questions are filled from whichever contributor completed them.</li>
+    <li>Where two or more assessors answered the same question, the consolidated score is the mean of their scores, rounded down to the nearest whole level.</li>
+    <li>Area and subject figures are the unweighted mean of the question scores within them, so areas with more questions carry proportionally more detail but no extra weight.</li>
+    <li>Only questions answered in both the self and external assessments contribute to a gap figure.</li>
+  </ul>
+  ${contributors.length ? `<h3>Contributors</h3>
+  <table>
+    <thead><tr><th>Assessor</th><th class="num">Self answers</th><th class="num">External answers</th></tr></thead>
+    <tbody>${contributors.map(c => `<tr><td>${esc(c.name)}</td><td class="num">${c.selfN}</td><td class="num">${c.extN}</td></tr>`).join("")}</tbody>
+  </table>` : ""}
+  <div class="foot">
+    ${esc(state.client || "")}${state.title ? " &middot; " + esc(state.title) : ""} &middot; ${reportDate()} &middot;
+    ${TOTAL_Q} questions across ${DATA.areas.length} assessment areas &middot; generated by CVM Assessment build ${BUILD}
+  </div>
+</section>
+
+${appendix}
+</body></html>`;
+}
+
+/* ---------- delivery ---------- */
+function makeReport() {
+  if (!state.client && !state.title) {
+    if (!confirm("This report has no client name or title set — it will be hard to identify.\n\nCreate it anyway?")) {
+      ui.tab = "more"; render(); return;
+    }
+  }
+  const html = buildReportHTML();
+  const name = nameParts("cvm-report") + ".pdf";
+
+  // Native app: Swift renders a real PDF and opens the share sheet.
+  try {
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.cvmPdf) {
+      window.webkit.messageHandlers.cvmPdf.postMessage({ name: name, html: html });
+      toast("Building PDF…");
+      return;
+    }
+  } catch (e) { /* fall through */ }
+
+  // Browser / installed web app: open and print, so the user can Save as PDF.
+  const w = window.open("", "_blank");
+  if (!w) {
+    // Popup blocked — hand over the HTML file instead; it prints from Safari.
+    download(html, name.replace(/\.pdf$/, ".html"), "text/html;charset=utf-8");
+    toast("Report saved — open it and print to PDF");
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { try { w.print(); } catch (e) { /* user can print manually */ } }, 600);
 }
 
 /* ============================================================
@@ -1304,7 +1932,7 @@ document.querySelector("main").addEventListener("click", e => {
   if (sc) {
     const card = sc.closest(".qcard"), [aid, i] = card.dataset.q.split("|");
     const n = +sc.dataset.score, cur = val(aid, +i, state.lane);
-    setResp(aid, +i, state.lane === "self" ? { sa: n === cur ? null : n } : { ea: n === cur ? null : n });
+    setScore(aid, +i, state.lane, n === cur ? null : n);
     haptic(n === cur ? "soft" : "light");
     refreshCard(card, aid, +i);
     return;
@@ -1333,18 +1961,26 @@ function handleAct(act, el) {
       refreshCard(card, aid, i); toast("Note saved"); return;
     }
     if (act === "clear") {
-      setResp(aid, i, state.lane === "self" ? { sa: null } : { ea: null });
+      setScore(aid, i, state.lane, null);
       refreshCard(card, aid, i); return;
     }
   }
   if (act === "toggletable") { ui.showTable = !ui.showTable; render(true); return; }
-  if (act === "csv") { download(buildCSV(), "cvm-assessment-" + slug(state.client) + "-" + stamp() + ".csv", "text/csv;charset=utf-8"); return; }
+  if (act === "csv") { download(buildCSV(), reportName("csv"), "text/csv;charset=utf-8"); return; }
   if (act === "json") {
-    download(JSON.stringify({ app: "cvm-assess", version: 1, exported: new Date().toISOString(), state }, null, 2),
-      "cvm-assessment-" + slug(state.client) + "-" + stamp() + ".json", "application/json");
+    download(JSON.stringify({ app: "cvm-assess", version: 2, build: BUILD, exported: new Date().toISOString(), state }, null, 2),
+      reportName("json"), "application/json");
     return;
   }
   if (act === "import") { $("#fileIn").click(); return; }
+  if (act === "merge") { $("#mergeIn").click(); return; }
+  if (act === "undomerge") {
+    if (!undoSnapshot) { toast("Nothing to undo"); return; }
+    if (!confirm("Undo the last import? Everything merged in that step is removed.")) return;
+    try { state = JSON.parse(undoSnapshot); } catch (e) { toast("Undo failed"); return; }
+    undoSnapshot = null; save(); render(); toast("Last import undone"); return;
+  }
+  if (act === "report") { makeReport(); return; }
   if (act === "blank") {
     if (!confirm("Clear all scores and notes and start a blank assessment?")) return;
     state.responses = {}; state.seeded = false; save(); toast("Blank assessment started"); render(); return;
@@ -1364,6 +2000,8 @@ document.querySelector("main").addEventListener("input", e => {
 });
 document.querySelector("main").addEventListener("change", e => {
   if (e.target.id === "fClient") { state.client = e.target.value.trim(); save(); chrome(); }
+  if (e.target.id === "fTitle") { state.title = e.target.value.trim(); save(); chrome(); }
+  if (e.target.id === "fAppendix") { ui.reportAppendix = e.target.checked; }
   if (e.target.id === "fAssessor") { state.assessor = e.target.value.trim(); save(); }
   if (e.target.id === "fLane") { state.lane = e.target.value; save(); toast("Now completing: " + laneName(state.lane)); }
 });
@@ -1374,6 +2012,29 @@ document.querySelector("main").addEventListener("blur", e => {
     if (txt !== cmt(aid, i, state.lane)) setResp(aid, i, state.lane === "self" ? { sac: txt } : { eac: txt });
   }
 }, true);
+
+$("#mergeIn").addEventListener("change", e => {
+  const files = [...(e.target.files || [])];
+  e.target.value = "";
+  if (!files.length) return;
+
+  inspectFiles(files, info => {
+    const warn = mismatchWarning(info);
+    if (warn && !confirm(warn)) { toast("Import cancelled"); return; }
+
+    mergeFiles(files, results => {
+      const ok = results.filter(r => r.ok), bad = results.filter(r => !r.ok);
+      const filled = ok.reduce((n, r) => n + r.summary.filled, 0);
+      const avgd = ok.reduce((n, r) => n + r.summary.averaged, 0);
+      render();
+      if (bad.length) {
+        alert("Merged " + ok.length + " of " + results.length + " files.\n\nCould not read:\n" +
+              bad.map(b => "\u2022 " + b.file + " \u2014 " + b.error).join("\n"));
+      }
+      toast(ok.length + " merged \u00b7 " + filled + " answers added" + (avgd ? " \u00b7 " + avgd + " averaged" : ""));
+    });
+  });
+});
 
 $("#fileIn").addEventListener("change", e => {
   const f = e.target.files && e.target.files[0]; if (!f) return;
@@ -1444,6 +2105,12 @@ window.addEventListener("orientationchange", onResize);
 
 applyTheme();
 render();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
