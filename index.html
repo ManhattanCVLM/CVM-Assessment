@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CVM Assess">
+<meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+<title>CVM Maturity Assessment</title>
+<!-- icons come from the native app bundle -->
+<style>
+:root{
+  color-scheme: light;
+  --surface-0:#f4f3f0; --surface-1:#fcfcfb; --surface-2:#ffffff;
+  --border:#e2e0da; --border-strong:#cdcac1;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7b7a74;
+  --series-1:#2a78d6; --series-2:#eb6834;
+  --series-1-soft:#e5eefb; --series-2-soft:#fdece4;
+  --seq-100:#cde2fb; --seq-250:#86b6ef; --seq-400:#3987e5; --seq-550:#1c5cab; --seq-700:#0d366b;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --neutral-mid:#f0efec;
+  --grid:#eae8e2;
+  --accent:#2a78d6;
+  --shadow:0 1px 2px rgba(11,11,11,.06),0 1px 8px rgba(11,11,11,.04);
+  --radius:14px;
+  --tap:44px;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --surface-0:#111110; --surface-1:#1a1a19; --surface-2:#232322;
+    --border:#333330; --border-strong:#464642;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#98978d;
+    --series-1:#3987e5; --series-2:#d95926;
+    --series-1-soft:#17263a; --series-2-soft:#33200f;
+    --seq-100:#0d366b; --seq-250:#184f95; --seq-400:#256abf; --seq-550:#3987e5; --seq-700:#86b6ef;
+    --neutral-mid:#383835;
+    --grid:#2b2b29;
+    --accent:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 1px 8px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-0:#111110; --surface-1:#1a1a19; --surface-2:#232322;
+  --border:#333330; --border-strong:#464642;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#98978d;
+  --series-1:#3987e5; --series-2:#d95926;
+  --series-1-soft:#17263a; --series-2-soft:#33200f;
+  --seq-100:#0d366b; --seq-250:#184f95; --seq-400:#256abf; --seq-550:#3987e5; --seq-700:#86b6ef;
+  --neutral-mid:#383835;
+  --grid:#2b2b29;
+  --accent:#3987e5;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 1px 8px rgba(0,0,0,.25);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--surface-0); color:var(--text-primary);
+  font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea,select{font:inherit;font-size:16px;color:inherit}
+h1,h2,h3,h4{margin:0;font-weight:650;letter-spacing:-.01em}
+a{color:var(--accent)}
+
+/* ---------- app shell ---------- */
+#app{display:flex;flex-direction:column;min-height:100%}
+.topbar{
+  position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface-1) 88%,transparent);
+  backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);
+  border-bottom:1px solid var(--border);
+  padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;
+}
+.topbar-row{display:flex;align-items:center;gap:10px;min-height:34px}
+.topbar h1{font-size:19px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .sub{font-size:12.5px;color:var(--text-muted);margin-top:1px}
+.iconbtn{
+  min-width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--accent);font-size:14.5px;font-weight:600;padding:0 8px;flex:none
+}
+.iconbtn:active{background:var(--surface-2)}
+main{flex:1;padding:14px 16px calc(96px + env(safe-area-inset-bottom))}
+body.has-fab main{padding-bottom:calc(146px + env(safe-area-inset-bottom))}
+.view[hidden]{display:none}
+
+/* ---------- tab bar ---------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;
+  background:color-mix(in srgb,var(--surface-1) 92%,transparent);
+  backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);
+  border-top:1px solid var(--border);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tabbar button{
+  flex:1;padding:8px 4px 7px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10.5px;font-weight:550;color:var(--text-muted);letter-spacing:.01em;min-height:var(--tap)
+}
+.tabbar button[aria-current="page"]{color:var(--accent)}
+.tabbar svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- cards ---------- */
+.card{
+  background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:14px;margin-bottom:12px
+}
+.card.tight{padding:12px}
+.card-title{font-size:13px;font-weight:650;letter-spacing:.02em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:2px}
+.card-note{font-size:12.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.4}
+.section-label{font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin:20px 2px 8px}
+.section-label:first-child{margin-top:2px}
+
+/* ---------- area list ---------- */
+.arealist{display:flex;flex-direction:column;gap:10px}
+.arearow{
+  display:flex;align-items:center;gap:13px;width:100%;text-align:left;
+  background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:13px 14px;min-height:var(--tap)
+}
+.arearow:active{background:var(--surface-2)}
+.arearow .meta{flex:1;min-width:0}
+.arearow .nm{font-size:15.5px;font-weight:600;line-height:1.25}
+.arearow .dt{font-size:12.5px;color:var(--text-muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chev{color:var(--text-muted);flex:none;font-size:19px;line-height:1}
+.ring{flex:none;width:46px;height:46px;position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring .pct{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums
+}
+
+/* ---------- lane switch (self / external) ---------- */
+.lanes{display:flex;gap:6px;background:var(--surface-0);border:1px solid var(--border);border-radius:11px;padding:3px;margin-bottom:12px}
+.lanes button{
+  flex:1;min-height:38px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:center;gap:7px
+}
+.lanes button[aria-pressed="true"]{background:var(--surface-2);color:var(--text-primary);box-shadow:var(--shadow)}
+.swatch{width:9px;height:9px;border-radius:2px;flex:none}
+.sw1{background:var(--series-1)} .sw2{background:var(--series-2)}
+
+/* ---------- question card ---------- */
+.qcard{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:10px}
+.qhead{display:flex;gap:8px;align-items:baseline;margin-bottom:7px}
+.qnum{font-size:11.5px;font-weight:650;color:var(--text-muted);font-variant-numeric:tabular-nums;flex:none}
+.qtext{font-size:15px;line-height:1.4;font-weight:450}
+.subjtag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--text-secondary);background:var(--surface-0);border:1px solid var(--border);border-radius:999px;padding:2px 9px;margin-bottom:8px}
+.scale{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:11px}
+.scale button{
+  min-height:42px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-2);
+  font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:center
+}
+.scale button:active{transform:scale(.94)}
+.scale button[aria-pressed="true"]{color:#fff;border-color:transparent}
+.lane-self .scale button[aria-pressed="true"]{background:var(--series-1)}
+.lane-external .scale button[aria-pressed="true"]{background:var(--series-2)}
+.scalefoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:9px;font-size:12.5px}
+.levelname{font-weight:600;color:var(--text-primary)}
+.levelname.empty{color:var(--text-muted);font-weight:450}
+.otherlane{color:var(--text-secondary);display:flex;align-items:center;gap:6px;font-size:12px;flex:none}
+.qactions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.minibtn{
+  border:1px solid var(--border-strong);border-radius:9px;padding:0 12px;min-height:36px;
+  font-size:13px;font-weight:600;color:var(--text-secondary);display:inline-flex;align-items:center;gap:6px
+}
+.minibtn:active{background:var(--surface-0)}
+.minibtn.on{color:var(--accent);border-color:var(--accent)}
+.cmtwrap{margin-top:10px}
+.cmtwrap[hidden]{display:none}
+.cmtwrap label{display:block;font-size:11.5px;font-weight:650;letter-spacing:.03em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px}
+textarea{
+  width:100%;min-height:76px;padding:10px 11px;border:1px solid var(--border-strong);border-radius:10px;
+  background:var(--surface-2);resize:vertical;line-height:1.4
+}
+textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.savedcmt{font-size:13px;color:var(--text-secondary);background:var(--surface-0);border-left:3px solid var(--border-strong);padding:8px 10px;border-radius:0 8px 8px 0;margin-top:9px;white-space:pre-wrap}
+.savedcmt b{display:block;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px;font-weight:650}
+
+/* ---------- filter row ---------- */
+.filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.filters::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;border:1px solid var(--border-strong);border-radius:999px;padding:0 13px;min-height:34px;
+  font-size:13px;font-weight:600;color:var(--text-secondary);display:inline-flex;align-items:center;gap:6px;
+  background:var(--surface-1)
+}
+.chip[aria-pressed="true"]{background:var(--text-primary);color:var(--surface-1);border-color:var(--text-primary)}
+.searchwrap{position:relative;margin-bottom:12px}
+.searchwrap input{
+  width:100%;min-height:40px;padding:0 36px 0 12px;border:1px solid var(--border-strong);
+  border-radius:11px;background:var(--surface-1)
+}
+.searchwrap .clr{position:absolute;right:4px;top:3px;width:34px;height:34px;color:var(--text-muted);font-size:17px}
+
+/* ---------- subject group ---------- */
+.subjgroup{margin-bottom:8px}
+.subjhead{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 13px;min-height:var(--tap);
+  background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)
+}
+.subjhead .nm{flex:1;font-size:14.5px;font-weight:600;line-height:1.3}
+.subjhead .cnt{font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;flex:none}
+.subjhead .caret{color:var(--text-muted);flex:none;transition:transform .18s;font-size:12px}
+.subjhead[aria-expanded="true"]{border-radius:var(--radius) var(--radius) 0 0}
+.subjhead[aria-expanded="true"] .caret{transform:rotate(90deg)}
+.subjbody{padding:10px 0 2px}
+.subjbody[hidden]{display:none}
+.dualpair{display:flex;gap:3px;align-items:center;flex:none}
+.dualpair span{
+  min-width:23px;height:23px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums;color:#fff
+}
+.dualpair .d1{background:var(--series-1)} .dualpair .d2{background:var(--series-2)}
+.dualpair .dn{background:var(--surface-0);color:var(--text-muted);border:1px dashed var(--border-strong)}
+/* ---------- dashboard ---------- */
+.hero{display:flex;gap:10px;margin-bottom:12px}
+.tile{
+  flex:1;background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:13px 14px;min-width:0
+}
+.tile .lbl{font-size:11.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+.tile .val{font-size:30px;font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:5px}
+.tile .val small{font-size:14px;font-weight:550;color:var(--text-muted);letter-spacing:0}
+.tile .cap{font-size:12px;color:var(--text-secondary);margin-top:2px;line-height:1.3}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px;color:var(--text-secondary)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:block}
+
+.bars{display:flex;flex-direction:column;gap:13px}
+.barrow{width:100%;text-align:left;display:block;background:none;padding:0}
+.barrow .cat{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+.barrow .cat .nm{font-size:13.5px;font-weight:600;line-height:1.25;min-width:0}
+.barrow .cat .gp{font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums;flex:none;letter-spacing:.01em}
+.track{position:relative;height:11px;background:var(--grid);border-radius:4px;margin-bottom:2px}
+.track:last-of-type{margin-bottom:0}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;min-width:3px;transition:width .35s cubic-bezier(.3,.9,.3,1)}
+.fill.f1{background:var(--series-1)} .fill.f2{background:var(--series-2)}
+.barvals{display:flex;gap:10px;margin-top:5px;font-size:11.5px;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.barvals b{color:var(--text-primary);font-weight:650}
+.axis{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin-top:9px;padding-top:7px;border-top:1px solid var(--grid)}
+
+.gaplist{display:flex;flex-direction:column;gap:2px}
+.gapitem{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--grid)}
+.gapitem:last-child{border-bottom:0}
+.gapitem .txt{flex:1;min-width:0}
+.gapitem .q{font-size:13.5px;line-height:1.35}
+.gapitem .a{font-size:11.5px;color:var(--text-muted);margin-top:3px}
+.gapchip{
+  flex:none;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;
+  font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;border:1px solid transparent
+}
+.gapchip.over{color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent);border-color:color-mix(in srgb,var(--good) 34%,transparent)}
+.gapchip.under{color:var(--critical);background:color-mix(in srgb,var(--critical) 12%,transparent);border-color:color-mix(in srgb,var(--critical) 34%,transparent)}
+.gapchip.flat{color:var(--text-secondary);background:var(--surface-0);border-color:var(--border-strong)}
+
+table.dt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+table.dt th,table.dt td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--grid);white-space:nowrap}
+table.dt th:first-child,table.dt td:first-child{text-align:left;white-space:normal;min-width:34%}
+table.dt th{font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--text-muted);font-weight:650}
+table.dt td b{font-weight:650}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+.meter{height:9px;border-radius:4px;background:var(--grid);overflow:hidden;margin-top:9px}
+.meter i{display:block;height:100%;border-radius:0 4px 4px 0;background:var(--seq-400)}
+
+/* ---------- slicer ---------- */
+.slicer{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 13px 13px;margin-bottom:12px}
+.slicer-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.slicer-head span{font-size:11.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)}
+.slicer-all{font-variant-numeric:tabular-nums}
+.slicer .filters{margin-bottom:0}
+.linkbtn{font-size:12.5px;font-weight:650;color:var(--accent);padding:2px 0;min-height:24px}
+
+/* ---------- charts ---------- */
+.chart-wide{display:block}
+.chart-host{margin:2px 0 4px;display:flex;flex-direction:column;align-items:center}
+svg.radar,svg.barchart{display:block;max-width:100%;overflow:visible;touch-action:manipulation}
+svg.barchart{align-self:stretch}
+.wedge{cursor:pointer}
+[data-cat]{cursor:pointer}
+[data-cat]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.radarkey{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;width:100%}
+.radarkey li{display:flex;gap:7px;align-items:baseline;font-size:11.5px;color:var(--text-secondary);line-height:1.3;padding:2px 0;cursor:pointer}
+.radarkey li b{flex:none;min-width:14px;font-variant-numeric:tabular-nums;color:var(--text-muted);font-weight:650}
+.radarkey li.on{color:var(--text-primary);font-weight:600}
+.radarkey li.on b{color:var(--accent)}
+.readout{border-top:1px solid var(--grid);margin-top:10px;padding-top:11px}
+.readout.muted{font-size:12.5px;color:var(--text-muted);text-align:center;padding-top:10px}
+.ro-name{font-size:14px;font-weight:650;line-height:1.3;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.ro-area{font-size:11.5px;font-weight:500;color:var(--text-muted)}
+.ro-vals{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:7px;font-size:12.5px;color:var(--text-secondary)}
+.ro-vals span{display:inline-flex;align-items:center;gap:6px}
+.ro-vals b{font-size:15px;font-weight:680;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.ro-n{color:var(--text-muted);font-variant-numeric:tabular-nums}
+
+/* ---------- scale reference / settings ---------- */
+.scalelist{display:flex;flex-direction:column;gap:1px}
+.scaleitem{display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:1px solid var(--grid)}
+.scaleitem:last-child{border-bottom:0}
+.scaleitem .n{
+  width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none;
+  font-size:13px;font-weight:650;color:var(--text-primary);font-variant-numeric:tabular-nums;
+  border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)
+}
+.scaleitem .d{flex:1;min-width:0}
+.scaleitem .d strong{display:block;font-size:14px;font-weight:600}
+.scaleitem .d span{font-size:12.5px;color:var(--text-muted);line-height:1.35;display:block;margin-top:1px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11.5px;font-weight:650;letter-spacing:.03em;text-transform:uppercase;color:var(--text-muted);margin-bottom:5px}
+.field input,.field select{width:100%;min-height:42px;padding:0 11px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface-2)}
+.btnrow{display:flex;flex-direction:column;gap:9px}
+.bigbtn{
+  width:100%;min-height:46px;border-radius:11px;border:1px solid var(--border-strong);background:var(--surface-2);
+  font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px
+}
+.bigbtn:active{background:var(--surface-0)}
+.bigbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.bigbtn.danger{color:var(--critical);border-color:color-mix(in srgb,var(--critical) 40%,transparent)}
+.help{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.help ol{margin:8px 0 0;padding-left:20px} .help li{margin-bottom:5px}
+.empty{text-align:center;padding:34px 18px;color:var(--text-muted)}
+.empty .big{font-size:15px;font-weight:600;color:var(--text-secondary);margin-bottom:5px}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(20px);
+  bottom:calc(78px + env(safe-area-inset-bottom));z-index:200;
+  background:var(--text-primary);color:var(--surface-1);padding:10px 17px;border-radius:11px;
+  font-size:13.5px;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.22);
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:88vw;text-align:center
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.fabrow{
+  position:fixed;left:16px;right:16px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:55;
+  display:flex;gap:9px;pointer-events:none
+}
+.fabrow button{
+  pointer-events:auto;flex:1;min-height:46px;border-radius:12px;background:var(--accent);color:#fff;
+  font-size:14.5px;font-weight:650;box-shadow:0 4px 18px rgba(0,0,0,.2);
+  display:flex;align-items:center;justify-content:center;gap:8px
+}
+.fabrow button.ghost{background:var(--surface-2);color:var(--text-primary);border:1px solid var(--border-strong)}
+.fabrow[hidden]{display:none}
+.sronly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- iPad / wide ---------- */
+@media (min-width:768px){
+  main{padding:22px 26px calc(104px + env(safe-area-inset-bottom));max-width:1080px;margin:0 auto;width:100%}
+  .topbar{padding:calc(env(safe-area-inset-top) + 11px) 26px 11px}
+  .topbar-row{max-width:1080px;margin:0 auto;width:100%}
+  .topbar h1{font-size:22px}
+  .arealist{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .arealist .arearow{margin:0}
+  .qtext{font-size:15.5px}
+  .scale{max-width:560px}
+  .scale button{min-height:46px;font-size:15.5px}
+  .scalefoot{max-width:560px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  .grid2 .card{margin-bottom:0}
+  .fabrow{max-width:1080px;margin:0 auto;left:26px;right:26px}
+  /* iPad: radar beside its numbered key instead of a tall stack */
+  .chart-wide{display:flex;gap:22px;align-items:center;justify-content:center}
+  .chart-wide .chart-host{flex:1 1 auto;min-width:0}
+  .chart-wide .radarkey{grid-template-columns:1fr;width:auto;min-width:230px;margin-top:0;align-self:center}
+  .chart-wide .radarkey li{font-size:12.5px;padding:3px 0}
+  .tile .val{font-size:34px}
+}
+@media (min-width:1024px){
+  .arealist{grid-template-columns:1fr 1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-row">
+      <button class="iconbtn" id="backBtn" hidden>&#8249; Back</button>
+      <div style="flex:1;min-width:0">
+        <h1 id="title">CVM Maturity Assessment</h1>
+        <div class="sub" id="subtitle"></div>
+      </div>
+      <button class="iconbtn" id="themeBtn" title="Toggle appearance" aria-label="Toggle appearance"></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="view" id="view-assess"></section>
+    <section class="view" id="view-dash" hidden></section>
+    <section class="view" id="view-more" hidden></section>
+  </main>
+
+  <div class="fabrow" id="fabrow" hidden>
+    <button class="ghost" id="fabPrev">&#8249; Previous gap</button>
+    <button id="fabNext">Next unanswered &#8250;</button>
+  </div>
+
+  <nav class="tabbar" id="tabbar">
+    <button data-tab="assess" aria-current="page">
+      <svg viewBox="0 0 24 24"><path d="M9 5h9M9 12h9M9 19h9"/><path d="M4 5.5l1.2 1.2L7 4.8"/><path d="M4 12.5l1.2 1.2L7 11.8"/><circle cx="5.2" cy="19" r="1.3"/></svg>
+      Assess
+    </button>
+    <button data-tab="dash">
+      <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V5M16 20v-7M22 20H3"/></svg>
+      Dashboard
+    </button>
+    <button data-tab="more">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7"/></svg>
+      Setup
+    </button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<script>
+"use strict";
+/* ============================================================
+   CVM Maturity Assessment — offline mobile app
+   Data extracted from "CVM Maturity Assessment Comparison v1.0.xlsm"
+   ============================================================ */
+const DATA = {"client":"Manhattan Services","scaleMin":1,"scaleMax":8,"areas":[{"id":"Core_Supply_Chain","name":"Core Supply Chain","questions":[{"subject":"Procurement Strategy & Governance","q":"Does the organization have a clearly defined procurement strategy aligned with overall business goals?","sa":1,"ea":5,"eac":"This is underway"},{"subject":"Procurement Strategy & Governance","q":"How frequently is the procurement strategy reviewed and updated?","sa":1,"ea":3},{"subject":"Procurement Strategy & Governance","q":"Is procurement governance centralized, decentralized, or hybrid?","sa":2,"ea":4},{"subject":"Procurement Strategy & Governance","q":"How well are procurement processes integrated with organizational risk management practices?","sa":2,"ea":3},{"subject":"Procurement Strategy & Governance","q":"Does the organization have clear compliance and ethical sourcing guidelines?","sa":2,"ea":5},{"subject":"Procurement Strategy & Governance","q":"Does the organisation deploy the same process to all 4 groups of the supply chain?","sa":3,"ea":5},{"subject":"Procurement Strategy & Governance","q":"Does strategy work backwards from a point in the future so that all contract and financial considerations are proven to logically flow?","sa":3,"ea":5},{"subject":"Supplier Relationship Management","q":"Does the organization actively manage and measure supplier performance?","sa":2,"ea":3},{"subject":"Supplier Relationship Management","q":"Are obligations (all of them) used systematically to measure performance?","sa":2,"ea":2},{"subject":"Supplier Relationship Management","q":"Is the progression of activity and investment monitored for maturity progression for every contract?","sa":2,"ea":4},{"subject":"Supplier Relationship Management","q":"How are strategic supplier relationships fostered and maintained?","sa":2,"ea":5},{"subject":"Supplier Relationship Management","q":"Does the organization have a formal supplier segmentation strategy?","sa":3,"ea":4},{"subject":"Supplier Relationship Management","q":"How does the organization assess supplier risks (e.g. financial, geopolitical, environmental)?","sa":3,"ea":3},{"subject":"Supplier Relationship Management","q":"Is there a formal process for supplier development and collaboration?","sa":3,"ea":5},{"subject":"Supplier Relationship Management","q":"Is there a formal mechanism for generating value-based intelligence from all suppliers?","sa":3,"ea":6},{"subject":"Technology & Automation","q":"Is procurement and supply chain management automated to a large extent (e.g. e-procurement, digital sourcing)?","sa":2,"ea":7},{"subject":"Technology & Automation","q":"Does the organization leverage Artificial Intelligence (AI), Machine Learning (ML), or other advanced technologies in procurement decision-making?","sa":2,"ea":3},{"subject":"Technology & Automation","q":"Are digital tools used to enhance visibility and traceability throughout the supply chain?","sa":3,"ea":6},{"subject":"Technology & Automation","q":"Is the organization utilizing data analytics for demand forecasting, procurement decisions, and supplier performance monitoring?","sa":3,"ea":7},{"subject":"Technology & Automation","q":"How well integrated are procurement systems with other enterprise systems (e.g. ERP, CRM)?","sa":2,"ea":5},{"subject":"Technology & Automation","q":"How well integrated are TPRM, compliance, policy management and ESG?","sa":2,"ea":5},{"subject":"Data & Analytics","q":"Does the organization use data analytics to drive procurement and supply chain decisions?","sa":2,"ea":5},{"subject":"Data & Analytics","q":"How mature is the organization's use of predictive analytics for demand forecasting and inventory management?","sa":3,"ea":5},{"subject":"Data & Analytics","q":"Is there a centralized data repository for procurement and supply chain data, and how accessible is it across the organization?","sa":3,"ea":7},{"subject":"Data & Analytics","q":"Are there key performance indicators (KPIs) in place to measure procurement and supply chain efficiency, and how are they used?","sa":3,"ea":7},{"subject":"Data & Analytics","q":"Does the organization leverage real-time data for operational decision-making?","sa":4,"ea":7},{"subject":"Risk Management & Resilience","q":"Does the organization have a comprehensive risk management framework for procurement and supply chain?","sa":1,"ea":7},{"subject":"Risk Management & Resilience","q":"How resilient is the supply chain to disruptions (e.g. natural disasters, geopolitical risks, economic shifts)?","sa":1,"ea":3},{"subject":"Risk Management & Resilience","q":"Is there a formal business continuity plan (BCP) in place that includes procurement and supply chain?","sa":2,"ea":5},{"subject":"Risk Management & Resilience","q":"Does the organization proactively assess and manage risks related to supplier dependencies, and what mitigation strategies are in place?","sa":2,"ea":8},{"subject":"Risk Management & Resilience","q":"How mature is the organization in terms of sustainability and ethical sourcing as part of its risk management?","sa":2,"ea":7},{"subject":"Sustainability & Ethical Sourcing","q":"Does the organization have a formal sustainability and ethical sourcing policy in place?","sa":5,"ea":5},{"subject":"Sustainability & Ethical Sourcing","q":"Are sustainability and ethical sourcing goals integrated into procurement decision-making?","sa":5,"ea":5},{"subject":"Sustainability & Ethical Sourcing","q":"How does the organization measure and report on sustainability performance in the supply chain?","sa":6,"ea":6},{"subject":"Sustainability & Ethical Sourcing","q":"Does the procurement team actively engage in supplier diversity initiatives?","sa":6,"ea":6},{"subject":"Sustainability & Ethical Sourcing","q":"How does the organization ensure its suppliers adhere to sustainability and ethical standards?","sa":7,"ea":7},{"subject":"Procurement Process Efficiency","q":"Are procurement processes standardized and documented across the organization?","sa":7,"ea":7},{"subject":"Procurement Process Efficiency","q":"How well does the organization manage supplier onboarding and contract management processes?","sa":5,"ea":5},{"subject":"Procurement Process Efficiency","q":"Is procurement spend visibility and control in place?","sa":3,"ea":3},{"subject":"Procurement Process Efficiency","q":"Does the organization have an efficient process for purchase order creation, tracking, and invoicing?","sa":7,"ea":7},{"subject":"Procurement Process Efficiency","q":"How effective are procurement team workflows (e.g. requisitioning, sourcing, approval)?","sa":7,"ea":7},{"subject":"Collaboration & Communication","q":"How well do procurement and supply chain teams collaborate with other departments (e.g. finance, marketing, IT)?","sa":7,"ea":7},{"subject":"Collaboration & Communication","q":"Are procurement teams engaged in cross-functional planning and decision-making processes?","sa":7,"ea":7},{"subject":"Collaboration & Communication","q":"How transparent is communication with suppliers regarding expectations, performance, and changes in demand?","sa":7,"ea":7},{"subject":"Collaboration & Communication","q":"Does the organization use technology platforms to facilitate collaboration and real-time communication across the supply chain?","sa":7,"ea":7},{"subject":"Collaboration & Communication","q":"How mature are interdepartmental relationships in supporting end-to-end supply chain efficiency?","sa":5,"ea":5},{"subject":"Talent Management & Capability Building","q":"Does the organization have a structured talent development program for procurement and supply chain professionals?","sa":3,"ea":3},{"subject":"Talent Management & Capability Building","q":"How mature is the organization's approach to upskilling staff in areas such as digital tools, analytics, and risk management?","sa":5,"ea":4},{"subject":"Talent Management & Capability Building","q":"Is there a clear career progression for procurement and supply chain staff, and how is performance managed?","sa":7,"ea":7},{"subject":"Talent Management & Capability Building","q":"How diverse is the team, and does it reflect the organization's global and supply chain needs?","sa":7,"ea":7},{"subject":"Talent Management & Capability Building","q":"Are there formal programs for procurement and supply chain leadership development?","sa":7,"ea":7},{"subject":"Customer-Centricity & Service Levels","q":"How aligned is the supply chain to customer needs and expectations?","sa":5,"ea":5},{"subject":"Customer-Centricity & Service Levels","q":"Does the organization prioritize customer service levels in its procurement decisions (e.g. on-time delivery, product quality)?","sa":5,"ea":5},{"subject":"Customer-Centricity & Service Levels","q":"How effectively does the organization handle order fulfilment, including customer inquiries and complaints?","sa":5,"ea":5},{"subject":"Customer-Centricity & Service Levels","q":"Does the organization have a feedback loop for customer satisfaction that informs supply chain strategy?","sa":6,"ea":6},{"subject":"Customer-Centricity & Service Levels","q":"How well does the organization predict and respond to changes in customer demand?","sa":6,"ea":6},{"subject":"Cost Management & Efficiency","q":"Is cost management a key component of the procurement and supply chain strategy?","sa":7,"ea":7},{"subject":"Cost Management & Efficiency","q":"How effectively does the organization manage total cost of ownership (TCO) across its supply chain?","sa":7,"ea":7},{"subject":"Cost Management & Efficiency","q":"Are there processes in place to monitor and reduce procurement costs (e.g. negotiation, value engineering, bulk buying)?","sa":5,"ea":5},{"subject":"Cost Management & Efficiency","q":"Does the organization optimize supply chain operations to reduce waste and improve cost efficiency?","sa":6,"ea":6},{"subject":"Cost Management & Efficiency","q":"How mature are the organization's approaches to controlling procurement fraud, waste, and abuse?","sa":6,"ea":6},{"subject":"Performance Measurement & Continuous Improvement","q":"Does the organization regularly evaluate procurement and supply chain performance through internal audits or assessments?","sa":7,"ea":7},{"subject":"Performance Measurement & Continuous Improvement","q":"Are there processes in place for continuous improvement in procurement and supply chain operations?","sa":7,"ea":7},{"subject":"Performance Measurement & Continuous Improvement","q":"How effectively does the organization use feedback from performance reviews to drive change?","sa":6,"ea":6},{"subject":"Performance Measurement & Continuous Improvement","q":"Does the organization benchmark its procurement and supply chain performance against industry standards or competitors?","sa":5,"ea":5},{"subject":"Performance Measurement & Continuous Improvement","q":"How mature is the organization's use of tools like Lean, Six Sigma, or other methodologies to improve supply chain efficiency?","sa":5,"ea":5}]},{"id":"Spend_Analytics","name":"Spend Analytics","questions":[{"subject":"Governance & Strategy","q":"Does the organization have a formal strategy for spend analytics, and how aligned is it with overall business goals?","sa":1,"ea":1},{"subject":"Governance & Strategy","q":"Who is accountable for the spend analytics function, and is it integrated within procurement or finance?","sa":2,"ea":2},{"subject":"Governance & Strategy","q":"How frequently is the spend analytics strategy reviewed and updated?","sa":4,"ea":4},{"subject":"Governance & Strategy","q":"Are there clear governance structures in place to oversee data management, analytics, and reporting processes?","sa":4,"ea":4},{"subject":"Data Collection & Integration","q":"How is spend data collected across the enterprise (e.g. procurement, finance, accounts payable)?","sa":5,"ea":5},{"subject":"Data Collection & Integration","q":"Does the organization have a centralized data repository for spend data, and how easily accessible is it for stakeholders?","sa":5,"ea":5},{"subject":"Data Collection & Integration","q":"Are there processes in place to ensure data accuracy, consistency, and completeness?","sa":5,"ea":5},{"subject":"Data Collection & Integration","q":"How well are data from different systems (ERP, procurement platforms, accounting software) integrated into a single source of truth?","sa":7,"ea":7},{"subject":"Data Collection & Integration","q":"Does the organization track and categorize spend by various dimensions (e.g. supplier, category, business unit, location)?","sa":7,"ea":7},{"subject":"Data Collection & Integration","q":"Are spend data sources automated or manually gathered, and what is the level of automation?","sa":7,"ea":7},{"subject":"Data Quality & Accuracy","q":"How confident are the stakeholders in the accuracy and reliability of the spend data?","sa":6,"ea":6},{"subject":"Data Quality & Accuracy","q":"Are there regular data validation or cleansing processes to ensure high-quality data?","sa":5,"ea":5},{"subject":"Data Quality & Accuracy","q":"Does the organization have procedures to identify and correct data discrepancies or anomalies?","sa":6,"ea":6},{"subject":"Data Quality & Accuracy","q":"How does the organization ensure that spend data is up-to-date and reflects the most current transactions?","sa":5,"ea":5},{"subject":"Analytics Capabilities","q":"What types of analytics are performed on the spend data (e.g. descriptive, diagnostic, predictive, prescriptive)?"},{"subject":"Analytics Capabilities","q":"Does the organization use advanced analytics, such as machine learning or AI, to identify trends, anomalies, or opportunities?","sa":4,"ea":4},{"subject":"Analytics Capabilities","q":"How well does the spend analytics platform support ad-hoc analysis and reporting by users across different business units?","sa":4,"ea":4},{"subject":"Analytics Capabilities","q":"Are there self-service analytics capabilities for users, or is spend analytics largely managed by a central team?","sa":4,"ea":4},{"subject":"Analytics Capabilities","q":"Does the organization leverage any advanced tools like natural language processing (NLP) or AI for analysing unstructured data (e.g. contracts, invoices)?","sa":4,"ea":4},{"subject":"Spend Visibility & Reporting","q":"How comprehensive is the spend visibility across the organization? Can you access spend data at a granular level?","sa":5,"ea":5},{"subject":"Spend Visibility & Reporting","q":"Are there pre-configured reports or dashboards that provide key metrics such as total spend, savings, supplier performance, and compliance?","sa":5,"ea":5},{"subject":"Spend Visibility & Reporting","q":"How easy is it for different stakeholders (procurement, finance, business units) to access and interpret spend reports?","sa":5,"ea":5},{"subject":"Spend Visibility & Reporting","q":"Are there tailored reports for specific business needs, such as regional or category-based spend analysis?","sa":5,"ea":5},{"subject":"Spend Visibility & Reporting","q":"How frequently are reports updated, and how real-time is the reporting of spend data?","sa":5,"ea":5},{"subject":"Categorization & Classification","q":"Does the organization have a standardized system for classifying and categorizing spend (e.g. using UNSPSC codes or customized taxonomy)?","sa":5,"ea":5},{"subject":"Categorization & Classification","q":"How accurate is the categorization of spend data, and are there processes in place to continuously improve it?","sa":5,"ea":5},{"subject":"Categorization & Classification","q":"Are the spend categories aligned with strategic business objectives, such as supplier diversity, sustainability, or cost savings?","sa":4,"ea":4},{"subject":"Categorization & Classification","q":"How well does the organization handle multi-dimensional spend classifications (e.g. by geography, supplier, department)?","sa":4,"ea":4},{"subject":"Supplier & Contract Spend Analysis","q":"Does the organization have visibility into spend by supplier and supplier performance (e.g. cost, quality, delivery)?","sa":4,"ea":4},{"subject":"Supplier & Contract Spend Analysis","q":"Is there detailed analysis of spend trends by supplier, including historical comparisons and forecasts?","sa":6,"ea":6},{"subject":"Supplier & Contract Spend Analysis","q":"Are contracts analysed as part of spend analytics to identify opportunities for renegotiation, consolidation, or compliance?","sa":6,"ea":6},{"subject":"Supplier & Contract Spend Analysis","q":"How effectively does the spend analytics platform track compliance to contract terms (e.g. pricing, volume commitments)?","sa":6,"ea":6},{"subject":"Supplier & Contract Spend Analysis","q":"Does the organization use spend data to identify opportunities for supplier rationalization or consolidation?","sa":5,"ea":5},{"subject":"Compliance & Risk Management","q":"How does the organization use spend analytics to track and enforce compliance with procurement policies and regulations?","sa":4,"ea":4},{"subject":"Compliance & Risk Management","q":"Are there systems in place to flag high-risk spend activities, such as maverick buying or off-contract spending?","sa":5,"ea":5},{"subject":"Compliance & Risk Management","q":"Does spend analytics help the organization identify and mitigate supply chain risks related to suppliers, categories, or geographies?","sa":5,"ea":5},{"subject":"Compliance & Risk Management","q":"How well does the organization use spend data to monitor and manage risks in supplier relationships (e.g. financial stability, geopolitical issues)?","sa":6,"ea":6},{"subject":"Cost Savings & Efficiency","q":"Does the organization leverage spend analytics to identify and track cost-saving opportunities (e.g. volume discounts, negotiation opportunities)?","sa":5,"ea":5},{"subject":"Cost Savings & Efficiency","q":"Are savings opportunities regularly tracked, reported, and realized based on spend analysis?","sa":6,"ea":6},{"subject":"Cost Savings & Efficiency","q":"How does spend analytics contribute to improving procurement processes, such as supplier negotiation and contract management?","sa":4,"ea":4},{"subject":"Cost Savings & Efficiency","q":"Is there a direct correlation between spend analysis insights and cost reduction in procurement activities?","sa":4,"ea":4},{"subject":"Stakeholder Engagement & Collaboration","q":"How involved are key stakeholders (e.g. procurement, finance, business units) in the design and implementation of the spend analytics process?","sa":4,"ea":4},{"subject":"Stakeholder Engagement & Collaboration","q":"How does spend analytics facilitate collaboration between departments (e.g. procurement and finance) in decision-making?","sa":4,"ea":4},{"subject":"Stakeholder Engagement & Collaboration","q":"Is there a feedback loop from stakeholders to continuously improve spend analytics processes and reports?","sa":5,"ea":5},{"subject":"Stakeholder Engagement & Collaboration","q":"How well do stakeholders understand and trust the insights provided by spend analytics?","sa":5,"ea":5},{"subject":"Performance Measurement & KPIs","q":"Does the organization have established Key Performance Indicators (KPIs) related to spend analytics (e.g. savings achieved, compliance rate, supplier performance)?","sa":5,"ea":5},{"subject":"Performance Measurement & KPIs","q":"How are these KPIs tracked and reported across the organization?","sa":5,"ea":5},{"subject":"Performance Measurement & KPIs","q":"Are there regular reviews of spend analytics KPIs to assess progress against strategic goals?","sa":6,"ea":6},{"subject":"Performance Measurement & KPIs","q":"Does the spend analytics platform allow for custom KPIs to meet the unique needs of different departments or business units?","sa":6,"ea":6},{"subject":"Technology & Tools","q":"What technology or tools are used to collect, store, analyse, and report spend data (e.g. ERP systems, procurement software, business intelligence tools)?","sa":7,"ea":7},{"subject":"Technology & Tools","q":"Are the spend analytics tools integrated with other enterprise systems (e.g. ERP, contract management systems)?","sa":6,"ea":6},{"subject":"Technology & Tools","q":"How user-friendly are the spend analytics tools for both technical and non-technical users?","sa":5,"ea":5},{"subject":"Technology & Tools","q":"Is the spend analytics system scalable and capable of supporting the organization’s growth and evolving needs?","sa":6,"ea":6},{"subject":"Technology & Tools","q":"Does the organization use cloud-based or on-premise solutions for spend analytics, and how does this impact flexibility and accessibility?","sa":5,"ea":5},{"subject":"Continuous Improvement & Innovation","q":"Is there a continuous improvement process for enhancing spend analytics (e.g. identifying gaps, optimizing data collection, improving analysis)?","sa":4,"ea":4},{"subject":"Continuous Improvement & Innovation","q":"How does the organization stay current with emerging trends and technologies in spend analytics (e.g. AI, blockchain)?","sa":5,"ea":5},{"subject":"Continuous Improvement & Innovation","q":"Are there regular evaluations of the effectiveness of spend analytics tools, processes, and outcomes?","sa":5,"ea":5},{"subject":"Continuous Improvement & Innovation","q":"How does the organization innovate in its use of spend analytics to drive competitive advantage?","sa":4,"ea":4},{"subject":"Change Management & Training","q":"How effectively is change management handled when implementing or upgrading spend analytics systems?","sa":7,"ea":7},{"subject":"Change Management & Training","q":"Is there a training program in place to ensure that employees are proficient in using spend analytics tools and interpreting data?","sa":6,"ea":6},{"subject":"Change Management & Training","q":"How does the organization ensure user adoption and alignment with analytics-driven decision-making?","sa":6,"ea":6},{"subject":"Change Management & Training","q":"Are there clear documentation and guidelines available for users to navigate the spend analytics system effectively?","sa":5,"ea":5},{"subject":"Actionable Insights & Decision-Making","q":"Does spend analytics provide actionable insights that drive business decisions across procurement, finance, and operations?","sa":6,"ea":6},{"subject":"Actionable Insights & Decision-Making","q":"How well does the organization use spend data to proactively address potential issues or opportunities (e.g. supplier consolidation, process optimization)?","sa":5,"ea":5},{"subject":"Actionable Insights & Decision-Making","q":"Are insights from spend analytics shared with relevant stakeholders in a timely manner for effective decision-making?","sa":4,"ea":4},{"subject":"Actionable Insights & Decision-Making","q":"How well does the organization prioritize and execute on the opportunities identified through spend analytics?","sa":5,"ea":5}]},{"id":"Vendor_Management","name":"Vendor Management","questions":[{"subject":"Vendor Strategy & Governance","q":"Does the organization have a clear, documented vendor management strategy aligned with overall business objectives?","sa":1,"ea":1},{"subject":"Vendor Strategy & Governance","q":"How frequently is the vendor management strategy reviewed and updated to align with changes in the business environment?","sa":4,"ea":4},{"subject":"Vendor Strategy & Governance","q":"Is vendor management centralized, decentralized, or hybrid across the organization?","sa":4,"ea":4},{"subject":"Vendor Strategy & Governance","q":"Who owns and oversees vendor management at the organizational level, and how is it structured within departments?","sa":4,"ea":4},{"subject":"Vendor Strategy & Governance","q":"Does the organization have a formal governance framework for managing vendor relationships, including roles, responsibilities, and accountability?","sa":6,"ea":6},{"subject":"Vendor Strategy & Governance","q":"How are vendor management policies, procedures, and standards communicated across the organization?","sa":5,"ea":5},{"subject":"Vendor Strategy & Governance","q":"Is there a defined process for evaluating and selecting vendors?","sa":5,"ea":5},{"subject":"Vendor Selection & Onboarding","q":"Does the organization have a formal vendor selection and evaluation process?","sa":7,"ea":7},{"subject":"Vendor Selection & Onboarding","q":"How are potential vendors assessed for criteria such as financial stability, compliance, capacity, and reputation?","sa":7,"ea":7},{"subject":"Vendor Selection & Onboarding","q":"Are vendors assessed based on their alignment with the organization’s sustainability, diversity, and ethical sourcing goals?","sa":7,"ea":7},{"subject":"Vendor Selection & Onboarding","q":"How well does the vendor onboarding process ensure that vendors understand expectations, performance metrics, and compliance requirements?","sa":6,"ea":6},{"subject":"Vendor Selection & Onboarding","q":"Is there a formal vetting process in place for assessing vendor risk before onboarding?","sa":6,"ea":6},{"subject":"Vendor Selection & Onboarding","q":"Are vendors evaluated regularly based on their ability to meet business needs and deliver against expectations?","sa":5,"ea":5},{"subject":"Vendor Relationship Management","q":"Does the organization foster collaborative, long-term relationships with key vendors, or is vendor management primarily transactional?","sa":5,"ea":5},{"subject":"Vendor Relationship Management","q":"How are vendor performance and relationships managed over time (e.g. regular check-ins, performance reviews)?","sa":5,"ea":5},{"subject":"Vendor Relationship Management","q":"Is there a formal process for dispute resolution and escalation with vendors?","sa":4,"ea":4},{"subject":"Vendor Relationship Management","q":"How well does the organization engage vendors in strategic initiatives or continuous improvement efforts?","sa":4,"ea":4},{"subject":"Vendor Relationship Management","q":"Is there a formal process for managing vendor communications and ensuring timely responses to issues?","sa":4,"ea":4},{"subject":"Vendor Relationship Management","q":"How are strategic vendors identified, and are they treated differently from non-strategic vendors?","sa":4,"ea":4},{"subject":"Vendor Performance Management","q":"Are clear Key Performance Indicators (KPIs) or Service Level Agreements (SLAs) defined for each vendor?","sa":6,"ea":6},{"subject":"Vendor Performance Management","q":"How is vendor performance tracked and measured against these KPIs/SLAs?","sa":5,"ea":5},{"subject":"Vendor Performance Management","q":"Does the organization use performance reviews or scorecards to evaluate vendor performance on a regular basis?","sa":5,"ea":5},{"subject":"Vendor Performance Management","q":"How does the organization monitor and report on vendor performance (e.g. dashboards, reports)?","sa":5,"ea":5},{"subject":"Vendor Performance Management","q":"Does the organization have a process in place for addressing underperformance, including corrective action plans?","sa":5,"ea":5},{"subject":"Vendor Performance Management","q":"How are vendor performance reviews integrated into contract renewal and renegotiation processes?","sa":5,"ea":5},{"subject":"Vendor Performance Management","q":"Does the organization evaluate not only cost but also quality, delivery times, innovation, and risk management as part of vendor performance?","sa":6,"ea":6},{"subject":"Contract Management & Compliance","q":"Are contracts with vendors standardized, or are they customized for each relationship?","sa":5,"ea":5},{"subject":"Contract Management & Compliance","q":"Does the organization have a centralized repository for managing vendor contracts and ensuring contract visibility?","sa":4,"ea":4},{"subject":"Contract Management & Compliance","q":"How effectively does the organization manage contract terms (e.g. pricing, deliverables, timelines, compliance)?","sa":4,"ea":4},{"subject":"Contract Management & Compliance","q":"Does the organization regularly audit vendor contracts for compliance, and how is contract compliance tracked?","sa":4,"ea":4},{"subject":"Contract Management & Compliance","q":"Are there clear processes in place for renegotiating contracts and managing renewals effectively?","sa":6,"ea":6},{"subject":"Contract Management & Compliance","q":"How well does the organization handle contract disputes, and is there a process for resolving them efficiently?","sa":6,"ea":6},{"subject":"Contract Management & Compliance","q":"Are all contracts and agreements clearly aligned with business objectives and vendor expectations?","sa":6,"ea":6},{"subject":"Risk Management","q":"Does the organization have a formal vendor risk management framework in place?","sa":5,"ea":5},{"subject":"Risk Management","q":"How does the organization assess, track, and manage vendor-related risks (e.g. financial, operational, geopolitical, cybersecurity)?","sa":4,"ea":4},{"subject":"Risk Management","q":"Are vendors categorized based on the level of risk they pose to the business (e.g. critical, non-critical)?","sa":6,"ea":6},{"subject":"Risk Management","q":"How does the organization mitigate risks associated with key vendors (e.g. second-sourcing, business continuity planning)?","sa":5,"ea":5},{"subject":"Risk Management","q":"Does the organization assess vendor resilience, including their ability to recover from disruptions or crises?","sa":5,"ea":5},{"subject":"Risk Management","q":"Are there contingency plans in place for dealing with vendor failure or non-performance?","sa":6,"ea":6},{"subject":"Risk Management","q":"How frequently does the organization conduct vendor risk assessments or audits?","sa":5,"ea":5},{"subject":"Cost Management & Value Optimization","q":"How does the organization manage vendor-related costs across different categories (e.g. negotiated pricing, volume discounts)?","sa":6,"ea":6},{"subject":"Cost Management & Value Optimization","q":"Is there a formal process for regularly reviewing and optimizing vendor spend to ensure cost efficiency?","sa":4,"ea":4},{"subject":"Cost Management & Value Optimization","q":"How does the organization track the total cost of ownership (TCO) for each vendor relationship?","sa":4,"ea":4},{"subject":"Cost Management & Value Optimization","q":"Are savings opportunities tracked, reported, and realized from vendor negotiations, consolidation, or process improvements?","sa":6,"ea":6},{"subject":"Cost Management & Value Optimization","q":"Does the organization benchmark vendor performance and pricing against industry standards or competitors?","sa":4,"ea":4},{"subject":"Cost Management & Value Optimization","q":"How are value and quality considered when assessing the overall benefit of a vendor relationship, beyond just cost?","sa":4,"ea":4},{"subject":"Technology & Tools","q":"Does the organization use automated tools or technology platforms to manage vendor information, performance, and contracts?","sa":5,"ea":5},{"subject":"Technology & Tools","q":"How well are vendor management systems (VMS) integrated with other enterprise systems (e.g. ERP, procurement, finance)?","sa":6,"ea":6},{"subject":"Technology & Tools","q":"Is there a centralized digital repository for storing vendor data and contracts, accessible to key stakeholders?","sa":5,"ea":5},{"subject":"Technology & Tools","q":"How effective are the tools used for vendor performance tracking, reporting, and analytics?","sa":5,"ea":5},{"subject":"Technology & Tools","q":"Does the organization leverage technology to enhance collaboration with vendors (e.g. supplier portals, real-time communications)?","sa":6,"ea":6},{"subject":"Technology & Tools","q":"How well does the organization use data analytics to derive insights from vendor management processes (e.g. performance trends, cost analysis)?","sa":6,"ea":6},{"subject":"Supplier Diversity & Sustainability","q":"Does the organization have a formal supplier diversity program, and how is it measured and tracked?","sa":7,"ea":7},{"subject":"Supplier Diversity & Sustainability","q":"How does the organization integrate sustainability criteria into its vendor selection and management process?","sa":6,"ea":6},{"subject":"Supplier Diversity & Sustainability","q":"Are there clear metrics to track and report on the sustainability and environmental impact of vendor relationships?","sa":5,"ea":5},{"subject":"Supplier Diversity & Sustainability","q":"Does the organization encourage vendors to adopt sustainable practices and technologies?","sa":6,"ea":6},{"subject":"Supplier Diversity & Sustainability","q":"Are there diversity and inclusion goals incorporated into the vendor management strategy, and how are they monitored?","sa":5,"ea":5},{"subject":"Collaboration & Communication","q":"How effective is cross-functional collaboration between procurement, finance, and other departments in managing vendors?","sa":4,"ea":4},{"subject":"Collaboration & Communication","q":"How well does the organization communicate with vendors regarding expectations, performance, and opportunities for improvement?","sa":5,"ea":5},{"subject":"Collaboration & Communication","q":"Are there regular meetings or reviews held between internal teams and key vendors to ensure alignment and resolve issues?","sa":5,"ea":5},{"subject":"Collaboration & Communication","q":"Does the organization have a formal process for sharing feedback and performance metrics with vendors to drive improvement?","sa":4,"ea":4},{"subject":"Collaboration & Communication","q":"How transparent is the organization in communicating changes (e.g. demand fluctuations, policy changes) that affect vendor relationships?","sa":7,"ea":7},{"subject":"Continuous Improvement & Innovation","q":"Is there a process for continuously improving the vendor management process, including technology, communication, and performance measurement?","sa":6,"ea":6},{"subject":"Continuous Improvement & Innovation","q":"How does the organization encourage innovation and new solutions from vendors to improve business outcomes?","sa":6,"ea":6},{"subject":"Continuous Improvement & Innovation","q":"Does the organization benchmark its vendor management practices against industry leaders or best practices?","sa":5,"ea":5},{"subject":"Continuous Improvement & Innovation","q":"Are lessons learned from vendor performance reviews used to drive process or operational improvements?","sa":6,"ea":6},{"subject":"Talent Management & Training","q":"Does the organization provide ongoing training and development for vendor management teams on best practices and emerging trends?","sa":5,"ea":5},{"subject":"Talent Management & Training","q":"Are there clear career paths and performance metrics for professionals involved in vendor management?","sa":4,"ea":4},{"subject":"Talent Management & Training","q":"How does the organization ensure that vendor management teams are knowledgeable about legal, regulatory, and compliance requirements related to vendor contracts?","sa":5,"ea":5},{"subject":"Talent Management & Training","q":"Are vendor management professionals equipped with the necessary tools and resources to succeed in their roles?","sa":7,"ea":7},{"subject":"Vendor Exit & Termination Management","q":"Does the organization have a formal process for managing vendor exit, including transitioning services and minimizing disruption?","sa":4,"ea":4},{"subject":"Vendor Exit & Termination Management","q":"How are vendor relationships formally ended when the partnership is no longer viable (e.g. performance issues, financial instability)?","sa":5,"ea":5},{"subject":"Vendor Exit & Termination Management","q":"Is there a process to ensure that intellectual property, data, and confidential information are properly transferred or secured upon vendor termination?","sa":6,"ea":6},{"subject":"Vendor Exit & Termination Management","q":"How does the organization assess and ensure a smooth transition to alternative vendors when necessary?","sa":7,"ea":7}]},{"id":"Category_Management","name":"Category Management","questions":[{"subject":"Key Elements of Category Management","q":"Category Segmentation: Identifying and grouping similar products or services that share common market and supply characteristics.","sa":1,"ea":1},{"subject":"Key Elements of Category Management","q":"Market Analysis: Assessing demand, supplier capabilities, and market trends for each category.","sa":4,"ea":4},{"subject":"Key Elements of Category Management","q":"Supplier Relationship Management (SRM): Establishing strong partnerships, negotiations, and contracts with suppliers.","sa":4,"ea":4},{"subject":"Key Elements of Category Management","q":"Total Cost of Ownership (TCO) Consideration: Evaluating costs beyond purchase price, including logistics, maintenance, and lifecycle expenses.","sa":4,"ea":4},{"subject":"Key Elements of Category Management","q":"Performance Metrics & KPIs: Monitoring efficiency, cost savings, quality, and service levels.","sa":3,"ea":3},{"subject":"Benefits of Category Management in Supply Chain","q":"Cost Reduction: Enhances purchasing power through bulk buying and better supplier negotiations.","sa":3,"ea":3},{"subject":"Benefits of Category Management in Supply Chain","q":"Risk Mitigation: Reduces supply disruptions by ensuring diversified and reliable supplier sources.","sa":3,"ea":3},{"subject":"Benefits of Category Management in Supply Chain","q":"Process Efficiency: Streamlines procurement processes and improves operational efficiency.","sa":7,"ea":7},{"subject":"Benefits of Category Management in Supply Chain","q":"Innovation & Supplier Collaboration: Encourages suppliers to provide innovative solutions for better product and service offerings.","sa":7,"ea":7},{"subject":"Benefits of Category Management in Supply Chain","q":"Enhanced Compliance & Governance: Ensures adherence to procurement policies, legal regulations, and sustainability goals.","sa":7,"ea":7},{"subject":"Category Management Process","q":"Define Categories: Identify and classify products and services into relevant categories.","sa":6,"ea":6},{"subject":"Category Management Process","q":"Analyse Market & Spend: Assess market conditions and organizational spending patterns.","sa":3,"ea":3},{"subject":"Category Management Process","q":"Develop Category Strategy: Establish a procurement strategy tailored to each category.","sa":7,"ea":7},{"subject":"Category Management Process","q":"Supplier Selection & Negotiation: Choose suppliers based on cost, quality, reliability, and strategic fit.","sa":8,"ea":8},{"subject":"Category Management Process","q":"Contract & Supplier Management: Implement contracts and monitor supplier performance.","sa":4,"ea":4},{"subject":"Category Management Process","q":"Continuous Improvement & Review: Adjust strategies based on market dynamics and business needs.","sa":4,"ea":4},{"subject":"Challenges in Category Management","q":"Market Volatility: Price fluctuations and supply chain disruptions can impact category strategies.","sa":4,"ea":4},{"subject":"Challenges in Category Management","q":"Data & Analytics Limitations: Poor data quality can hinder effective decision-making.","sa":4,"ea":4},{"subject":"Challenges in Category Management","q":"Stakeholder Resistance: Internal departments may resist changes in procurement practices.","sa":4,"ea":4},{"subject":"Challenges in Category Management","q":"Supplier Dependence: Over-reliance on a few suppliers can pose risks.","sa":3,"ea":3},{"subject":"Challenges in Category Management","q":"Integration with Technology: Adapting to digital tools like AI and automation can be complex.","sa":3,"ea":3},{"subject":"Best Practices for Effective Category Management","q":"Cross-functional Collaboration: Engage multiple departments for a holistic category strategy.","sa":3,"ea":3},{"subject":"Best Practices for Effective Category Management","q":"Leverage Technology & Data Analytics: Use procurement software, AI, and predictive analytics for better decision-making.","sa":2,"ea":2},{"subject":"Best Practices for Effective Category Management","q":"Risk Management Strategies: Develop contingency plans for supply chain disruptions.","sa":3,"ea":3},{"subject":"Best Practices for Effective Category Management","q":"Sustainability & ESG Considerations: Align procurement with environmental and ethical sourcing initiatives.","sa":3,"ea":3},{"subject":"Best Practices for Effective Category Management","q":"Supplier Development Programs: Foster long-term relationships and invest in supplier capabilities.","sa":3,"ea":3}]},{"id":"Financial_Management","name":"Financial Management","questions":[{"subject":"Governance & Strategy","q":"Do we have a centralized contract management system linked to POs and AP transactions?","sa":1,"ea":1},{"subject":"Governance & Strategy","q":"How effectively do we align procurement, finance, and supplier management strategies?","sa":4,"ea":4},{"subject":"Governance & Strategy","q":"Do we have clear policies for financial approvals and contract compliance?","sa":4,"ea":4},{"subject":"Data Integration & Visibility","q":"Can we track, match, and reconcile contracts, POs, and AP data in real time?","sa":6,"ea":6},{"subject":"Data Integration & Visibility","q":"Are contracts, POs, and AP transactions stored in a single platform, or do we rely on fragmented systems?","sa":5,"ea":5},{"subject":"Data Integration & Visibility","q":"What level of spend transparency do we have across all suppliers and categories?","sa":5,"ea":5},{"subject":"Spend Analysis & Reporting","q":"Do we regularly generate reports that compare contracted spend, PO commitments, and actual AP spend?","sa":7,"ea":7},{"subject":"Spend Analysis & Reporting","q":"Can we identify discrepancies between contract terms, PO issuance, and supplier invoices?","sa":7,"ea":7},{"subject":"Spend Analysis & Reporting","q":"How often do we perform variance analysis to detect overspending, leakage, or unapproved spend?","sa":7,"ea":7},{"subject":"Compliance & Risk Management","q":"How do we ensure supplier invoices align with contract terms and PO approvals before payment?","sa":6,"ea":6},{"subject":"Compliance & Risk Management","q":"Do we have controls in place to prevent duplicate invoices or unauthorized payments?","sa":5,"ea":5},{"subject":"Compliance & Risk Management","q":"What percentage of supplier invoices go through a three-way match process (contract → PO → invoice)?","sa":6,"ea":6},{"subject":"Supplier Performance & Financial Impact","q":"Do we track how supplier pricing aligns with agreed contractual rates?","sa":5,"ea":5},{"subject":"Supplier Performance & Financial Impact","q":"How do we measure the financial impact of early payment discounts or penalties for late payments?","sa":4,"ea":4},{"subject":"Supplier Performance & Financial Impact","q":"Are we analysing supplier payment cycles to optimize cash flow and working capital?","sa":5,"ea":5},{"subject":"Technology & Automation","q":"Do we use automated invoice matching to contracts and POs?","sa":4,"ea":4},{"subject":"Technology & Automation","q":"How mature is our ERP or procurement system’s ability to integrate financial data?","sa":6,"ea":6},{"subject":"Technology & Automation","q":"Are we leveraging AI or predictive analytics for spend forecasting and anomaly detection?","sa":5,"ea":5},{"subject":"Continuous Improvement & Benchmarking","q":"How often do we review and refine our financial controls in procurement?","sa":5,"ea":5},{"subject":"Continuous Improvement & Benchmarking","q":"Do we benchmark our financial management practices against industry best practices?","sa":5,"ea":5},{"subject":"Continuous Improvement & Benchmarking","q":"Are we actively working towards reducing manual interventions in invoice processing?","sa":5,"ea":5}]},{"id":"Complex_Contract_Mgt","name":"Complex Contract Management","questions":[{"subject":"Governance & Contract Oversight","q":"Is there a clear contract owner responsible for overseeing the agreement?","sa":1,"ea":1},{"subject":"Governance & Contract Oversight","q":"Have all stakeholders been properly briefed on their roles and responsibilities under the contract?","sa":4,"ea":4},{"subject":"Governance & Contract Oversight","q":"Is there a formal contract governance structure (e.g. steering committees, escalation pathways)?","sa":4,"ea":4},{"subject":"Governance & Contract Oversight","q":"Are there documented processes for contract change requests, approvals, and amendments?","sa":4,"ea":4},{"subject":"Governance & Contract Oversight","q":"Is the contract regularly reviewed to ensure alignment with business objectives?","sa":6,"ea":6},{"subject":"Scope Management & Service Delivery","q":"Is there a well-defined statement of work (SOW) outlining deliverables, milestones, and SLAs?","sa":5,"ea":5},{"subject":"Scope Management & Service Delivery","q":"How effectively does the team manage scope creep and prevent unauthorized changes?","sa":6,"ea":6},{"subject":"Scope Management & Service Delivery","q":"Are project timelines, resources, and deliverables clearly tracked and updated?","sa":7,"ea":7},{"subject":"Scope Management & Service Delivery","q":"How well does the team ensure alignment between business needs and contract obligations?","sa":7,"ea":7},{"subject":"Scope Management & Service Delivery","q":"Are dependencies and third-party contributions managed effectively?","sa":7,"ea":7},{"subject":"Performance Monitoring & Service Level Compliance","q":"Are there clear, measurable service level agreements (SLAs) and key performance indicators (KPIs)?","sa":6,"ea":6},{"subject":"Performance Monitoring & Service Level Compliance","q":"How frequently does the team review and report on SLA performance?","sa":5,"ea":5},{"subject":"Performance Monitoring & Service Level Compliance","q":"Are there documented processes for tracking incidents, escalations, and resolution times?","sa":7,"ea":7},{"subject":"Performance Monitoring & Service Level Compliance","q":"How well does the supplier adhere to contractual performance obligations?","sa":5,"ea":5},{"subject":"Performance Monitoring & Service Level Compliance","q":"Is there a structured process to apply penalties or service credits when SLAs are missed?","sa":5,"ea":5},{"subject":"Performance Monitoring & Service Level Compliance","q":"Are customer/user satisfaction levels regularly measured and acted upon?","sa":4,"ea":4},{"subject":"Financial & Cost Control","q":"Is there a structured process to track actual spend vs. contract budget?","sa":4,"ea":4},{"subject":"Financial & Cost Control","q":"Are invoices properly validated against contract terms and purchase orders before approval?","sa":4,"ea":4},{"subject":"Financial & Cost Control","q":"How well is the team managing cost variations, change requests, and additional charges?","sa":6,"ea":6},{"subject":"Financial & Cost Control","q":"Does the team effectively leverage volume discounts, rebates, or cost-saving opportunities?","sa":6,"ea":6},{"subject":"Financial & Cost Control","q":"Are contract payments linked to milestone achievements and quality of deliverables?","sa":5,"ea":5},{"subject":"Risk Management & Compliance","q":"Has the team conducted a comprehensive risk assessment for the contract?","sa":5,"ea":5},{"subject":"Risk Management & Compliance","q":"Are there contingency plans in place for supplier failure or underperformance?","sa":5,"ea":5},{"subject":"Risk Management & Compliance","q":"Does the contract include cybersecurity, data privacy, and regulatory compliance requirements?","sa":5,"ea":5},{"subject":"Risk Management & Compliance","q":"Is there an effective process for reporting and mitigating contractual risks?","sa":6,"ea":6},{"subject":"Risk Management & Compliance","q":"How well does the team ensure third-party vendors and subcontractors comply with the contract?","sa":7,"ea":7},{"subject":"Relationship & Stakeholder Management","q":"How well is the relationship with the IT service provider managed?","sa":4,"ea":4},{"subject":"Relationship & Stakeholder Management","q":"Is there a structured supplier engagement process (e.g. regular meetings, reviews)?","sa":4,"ea":4},{"subject":"Relationship & Stakeholder Management","q":"How effectively does the team resolve disputes and escalations?","sa":4,"ea":4},{"subject":"Relationship & Stakeholder Management","q":"Do internal stakeholders feel that the contract is delivering expected value?","sa":6,"ea":6},{"subject":"Relationship & Stakeholder Management","q":"Are there effective communication channels between the service provider, internal teams, and end users?","sa":6,"ea":6},{"subject":"Technology & Tools for Contract Management","q":"Is the contract managed using a dedicated contract management system or ERP tool?","sa":6,"ea":6},{"subject":"Technology & Tools for Contract Management","q":"Are there automated tracking and reporting tools for contract performance and costs?","sa":5,"ea":5},{"subject":"Technology & Tools for Contract Management","q":"How well is IT asset management integrated with the contract’s service provisions?","sa":4,"ea":4},{"subject":"Technology & Tools for Contract Management","q":"Are compliance, security, and service performance data digitally stored and easily accessible?","sa":6,"ea":6},{"subject":"Continuous Improvement & Lessons Learned","q":"How often does the team conduct post-project or ongoing contract reviews?","sa":5,"ea":5},{"subject":"Continuous Improvement & Lessons Learned","q":"Are lessons learned from past engagements applied to improve future contract management?","sa":6,"ea":6},{"subject":"Continuous Improvement & Lessons Learned","q":"Does the team proactively work with the supplier on service innovation and efficiency improvements?","sa":5,"ea":5},{"subject":"Continuous Improvement & Lessons Learned","q":"Is there a structured approach to benchmark performance against industry best practices?","sa":7,"ea":7},{"subject":"Continuous Improvement & Lessons Learned","q":"Are contract renewal and extension decisions based on data-driven performance evaluations?","sa":6,"ea":6}]},{"id":"Major_IT_Programme","name":"Major IT Programme","questions":[{"subject":"Governance & Programme Oversight","q":"Is there a clear governance framework with defined roles, responsibilities, and decision-making authority?","sa":1,"ea":1},{"subject":"Governance & Programme Oversight","q":"Is there a Programme Steering Committee overseeing strategy, risks, and critical decisions?","sa":2,"ea":2},{"subject":"Governance & Programme Oversight","q":"How well are programme objectives aligned with business goals and IT strategy?","sa":3,"ea":3},{"subject":"Governance & Programme Oversight","q":"Are programme sponsorship and leadership engagement strong and consistent?","sa":4,"ea":4},{"subject":"Governance & Programme Oversight","q":"Are there clearly defined success criteria and a measurable benefits realization plan?","sa":5,"ea":5},{"subject":"Governance & Programme Oversight","q":"Is there a documented escalation process for decision-making and issue resolution?","sa":6,"ea":6},{"subject":"Programme Scope & Planning","q":"Is the scope well-defined, documented, and agreed upon by key stakeholders?","sa":7,"ea":7},{"subject":"Programme Scope & Planning","q":"How well are programme goals, deliverables, and milestones documented and tracked?","sa":8,"ea":8},{"subject":"Programme Scope & Planning","q":"Are dependencies between workstreams, business units, and third parties clearly mapped?","sa":8,"ea":8},{"subject":"Programme Scope & Planning","q":"How is the impact of changes to scope, timeline, or budget managed?","sa":7,"ea":7},{"subject":"Programme Scope & Planning","q":"Is there a structured approach for managing and approving change requests?","sa":6,"ea":6},{"subject":"Stakeholder Engagement & Communication","q":"Have all key stakeholders been identified, engaged, and assigned responsibilities?","sa":5,"ea":5},{"subject":"Stakeholder Engagement & Communication","q":"How effectively are programme updates communicated across teams and leadership?","sa":6,"ea":6},{"subject":"Stakeholder Engagement & Communication","q":"Are stakeholder expectations managed effectively to prevent misalignment?","sa":5,"ea":5},{"subject":"Stakeholder Engagement & Communication","q":"Is there a structured approach for gathering stakeholder feedback and acting on it?","sa":5,"ea":5},{"subject":"Stakeholder Engagement & Communication","q":"How well is cross-functional collaboration encouraged and maintained throughout the programme?","sa":4,"ea":4},{"subject":"Programme Delivery & Execution","q":"Is there a well-structured Programme Delivery Plan with clear timelines, workstreams, and milestones?","sa":4,"ea":4},{"subject":"Programme Delivery & Execution","q":"Are project management methodologies (Agile, Waterfall, Hybrid) clearly defined and followed?","sa":4,"ea":4},{"subject":"Programme Delivery & Execution","q":"How well are workstreams and interdependencies managed to avoid bottlenecks?","sa":6,"ea":6},{"subject":"Programme Delivery & Execution","q":"Is there a process to track, manage, and report on progress, deviations, and delays?","sa":6,"ea":6},{"subject":"Programme Delivery & Execution","q":"Are critical risks and blockers escalated and addressed in a timely manner?","sa":5,"ea":5},{"subject":"Programme Delivery & Execution","q":"How are business continuity and service availability maintained during transformation?","sa":5,"ea":5},{"subject":"Risk Management & Issue Resolution","q":"Has a comprehensive risk register been created, and is it regularly updated?","sa":5,"ea":5},{"subject":"Risk Management & Issue Resolution","q":"Are risk mitigation strategies and contingency plans clearly defined and actionable?","sa":5,"ea":5},{"subject":"Risk Management & Issue Resolution","q":"How well does the team identify, track, and manage emerging risks?","sa":6,"ea":6},{"subject":"Risk Management & Issue Resolution","q":"Is there a structured approach for issue escalation and resolution?","sa":7,"ea":7},{"subject":"Risk Management & Issue Resolution","q":"How effectively does the team respond to unexpected challenges and disruptions?","sa":5,"ea":5},{"subject":"Technology & Solution Architecture","q":"Is the technical architecture aligned with future business and IT requirements?","sa":4,"ea":4},{"subject":"Technology & Solution Architecture","q":"How well does the new IT solution integrate with existing systems, tools, and infrastructure?","sa":4,"ea":4},{"subject":"Technology & Solution Architecture","q":"Is there a clear plan for data migration, system cutover, and legacy system decommissioning?","sa":6,"ea":6},{"subject":"Technology & Solution Architecture","q":"How effectively are performance, scalability, and security requirements considered in solution design?","sa":6,"ea":6},{"subject":"Technology & Solution Architecture","q":"Are there well-defined technical testing and validation processes before go-live?","sa":6,"ea":6},{"subject":"Financial Management & Budget Control","q":"Is there a clear budget with cost breakdowns and contingency allocations?","sa":5,"ea":5},{"subject":"Financial Management & Budget Control","q":"How closely is actual programme spend monitored against the budget?","sa":4,"ea":4},{"subject":"Financial Management & Budget Control","q":"Are cost overruns identified, explained, and controlled effectively?","sa":6,"ea":6},{"subject":"Financial Management & Budget Control","q":"Are financial approvals, procurement, and vendor payments managed efficiently?","sa":5,"ea":5},{"subject":"Financial Management & Budget Control","q":"Is there a structured approach to ensure financial benefits realization aligns with expected ROI?","sa":5,"ea":5},{"subject":"Vendor & Supplier Management","q":"Are third-party vendors and service providers effectively managed under contract terms?","sa":5,"ea":5},{"subject":"Vendor & Supplier Management","q":"Are SLAs and KPIs for vendor performance clearly defined and monitored?","sa":6,"ea":6},{"subject":"Vendor & Supplier Management","q":"How well are vendor dependencies and integration efforts tracked?","sa":6,"ea":6},{"subject":"Vendor & Supplier Management","q":"Are contract variations, delays, or underperformance proactively addressed?","sa":4,"ea":4},{"subject":"Vendor & Supplier Management","q":"Does the team leverage vendor capabilities for innovation and best practices?","sa":4,"ea":4},{"subject":"People, Skills, & Change Management","q":"Does the programme have the right mix of skills and expertise for successful delivery?","sa":4,"ea":4},{"subject":"People, Skills, & Change Management","q":"Are key roles and responsibilities clearly defined across teams?","sa":4,"ea":4},{"subject":"People, Skills, & Change Management","q":"How well is the programme handling resistance to change from impacted teams?","sa":7,"ea":7},{"subject":"People, Skills, & Change Management","q":"Is there an effective training and knowledge transfer plan to enable smooth adoption?","sa":5,"ea":5},{"subject":"People, Skills, & Change Management","q":"Are business users adequately prepared for new processes and systems?","sa":6,"ea":6},{"subject":"Testing, Deployment & Go-Live Readiness","q":"Are there structured testing phases (Unit, System, Integration, UAT) with clear exit criteria?","sa":5,"ea":5},{"subject":"Testing, Deployment & Go-Live Readiness","q":"Are defects and issues tracked, prioritized, and resolved before go-live?","sa":6,"ea":6},{"subject":"Testing, Deployment & Go-Live Readiness","q":"Is there a well-documented deployment plan, including rollback strategies?","sa":6,"ea":6},{"subject":"Testing, Deployment & Go-Live Readiness","q":"Has the business validated and signed off on system readiness?","sa":5,"ea":5},{"subject":"Testing, Deployment & Go-Live Readiness","q":"Are contingency plans in place for unexpected failures or disruptions post-go-live?","sa":7,"ea":7},{"subject":"Post-Implementation Support & Benefits Realization","q":"Is there a structured hypercare or post-go-live support plan in place?","sa":5,"ea":5},{"subject":"Post-Implementation Support & Benefits Realization","q":"How effectively is the programme measuring actual benefits vs. planned benefits?","sa":6,"ea":6},{"subject":"Post-Implementation Support & Benefits Realization","q":"Are there mechanisms to track long-term adoption, user satisfaction, and system performance?","sa":5,"ea":5},{"subject":"Post-Implementation Support & Benefits Realization","q":"Are lessons learned from the programme documented and shared for future initiatives?","sa":7,"ea":7},{"subject":"Post-Implementation Support & Benefits Realization","q":"Has the programme delivered tangible business value in terms of efficiency, cost savings, or innovation?","sa":4,"ea":4}]}]};
+
+const LEVELS = [
+  ["Not in place", "No process, ownership or evidence exists."],
+  ["Ad hoc", "Happens reactively, driven by individuals rather than process."],
+  ["Emerging", "Some practice exists but is inconsistent and undocumented."],
+  ["Developing", "Documented in parts, applied unevenly across the organisation."],
+  ["Defined", "Standard process defined, owned and generally followed."],
+  ["Managed", "Consistently applied and actively measured against targets."],
+  ["Advanced", "Data-driven, integrated across functions, drives decisions."],
+  ["Optimised", "Continuously improved, benchmarked, a source of advantage."]
+];
+const KEY = "cvm-assess-v1";
+const AREA_BY_ID = {};
+DATA.areas.forEach(a => { AREA_BY_ID[a.id] = a; });
+const TOTAL_Q = DATA.areas.reduce((n, a) => n + a.questions.length, 0);
+
+/* ---------- storage (degrades to memory if unavailable) ---------- */
+const store = (() => {
+  let ok = false, mem = null;
+  try { localStorage.setItem("__t", "1"); localStorage.removeItem("__t"); ok = true; } catch (e) { ok = false; }
+  return {
+    persistent: ok,
+    get() { try { return ok ? localStorage.getItem(KEY) : mem; } catch (e) { return mem; } },
+    set(v) { try { ok ? localStorage.setItem(KEY, v) : (mem = v); } catch (e) { mem = v; } },
+    del() { try { ok ? localStorage.removeItem(KEY) : (mem = null); } catch (e) { mem = null; } }
+  };
+})();
+
+function seedFromWorkbook() {
+  const r = {};
+  DATA.areas.forEach(a => a.questions.forEach((q, i) => {
+    if (q.sa == null && q.ea == null && !q.sac && !q.eac) return;
+    r[a.id + "|" + i] = { sa: q.sa, ea: q.ea, sac: q.sac || "", eac: q.eac || "" };
+  }));
+  return r;
+}
+let state = {
+  client: DATA.client || "",
+  assessor: "",
+  lane: "self",
+  responses: seedFromWorkbook(),
+  theme: "auto",
+  seeded: true
+};
+(function load() {
+  const raw = store.get();
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    if (s && typeof s === "object") state = Object.assign(state, s);
+  } catch (e) { /* keep defaults */ }
+})();
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => store.set(JSON.stringify(state)), 220);
+}
+
+/* ---------- ui state ---------- */
+const ui = { tab: "assess", area: null, dashArea: null, filter: "all", query: "", open: {}, showTable: false,
+             areaFilter: [], level: "area", pick: null };
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const resp = (aid, i) => state.responses[aid + "|" + i] || null;
+function setResp(aid, i, patch) {
+  const k = aid + "|" + i;
+  state.responses[k] = Object.assign({ sa: null, ea: null, sac: "", eac: "" }, state.responses[k], patch);
+  save();
+}
+const val = (aid, i, lane) => { const r = resp(aid, i); return r ? (lane === "self" ? r.sa : r.ea) : null; };
+const cmt = (aid, i, lane) => { const r = resp(aid, i); return r ? (lane === "self" ? (r.sac || "") : (r.eac || "")) : ""; };
+const laneName = l => l === "self" ? "Self assessment" : "External assessment";
+const fmt = n => n == null ? "—" : (Math.round(n * 10) / 10).toFixed(1);
+
+function stats(qs, aid) {
+  const sa = [], ea = []; let both = 0;
+  qs.forEach((q, i) => {
+    const idx = q.__i != null ? q.__i : i;
+    const s = val(aid, idx, "self"), e = val(aid, idx, "external");
+    if (s != null) sa.push(s);
+    if (e != null) ea.push(e);
+    if (s != null && e != null) both++;
+  });
+  const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  return { n: qs.length, saN: sa.length, eaN: ea.length, both, sa: avg(sa), ea: avg(ea), gap: (avg(ea) != null && avg(sa) != null) ? avg(ea) - avg(sa) : null };
+}
+const areaStats = a => stats(a.questions.map((q, i) => (q.__i = i, q)), a.id);
+
+function subjectsOf(a) {
+  const m = new Map();
+  a.questions.forEach((q, i) => {
+    if (!m.has(q.subject)) m.set(q.subject, []);
+    m.get(q.subject).push(Object.assign({}, q, { __i: i }));
+  });
+  return [...m.entries()].map(([name, qs]) => ({ name, qs }));
+}
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t.__t); t.__t = setTimeout(() => t.classList.remove("show"), 1900);
+}
+function pctLabel(done, total) {
+  if (!total) return 0;
+  const p = (done / total) * 100;
+  return done >= total ? 100 : Math.min(99, Math.round(p));
+}
+function ring(pct, size, done, total) {
+  const sz = size || 46, r = (sz - 6) / 2, c = 2 * Math.PI * r;
+  return `<div class="ring"><svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" aria-hidden="true">
+    <circle cx="${sz / 2}" cy="${sz / 2}" r="${r}" fill="none" stroke="var(--grid)" stroke-width="4"/>
+    <circle cx="${sz / 2}" cy="${sz / 2}" r="${r}" fill="none" stroke="var(--seq-400)" stroke-width="4"
+      stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - pct)).toFixed(1)}"/>
+  </svg><div class="pct">${done != null ? pctLabel(done, total) : Math.round(pct * 100)}%</div></div>`;
+}
+function gapChip(g) {
+  if (g == null) return `<span class="gapchip flat">n/a</span>`;
+  const r = Math.round(g * 10) / 10;
+  if (Math.abs(r) < 0.05) return `<span class="gapchip flat">&#9644; aligned</span>`;
+  return r > 0
+    ? `<span class="gapchip over">&#9650; ext +${r.toFixed(1)}</span>`
+    : `<span class="gapchip under">&#9660; ext ${r.toFixed(1)}</span>`;
+}
+
+/* ============================================================
+   ASSESS
+   ============================================================ */
+function renderAssess() {
+  const v = $("#view-assess");
+  if (!ui.area) { v.innerHTML = areaListHTML(); return; }
+  v.innerHTML = areaDetailHTML(AREA_BY_ID[ui.area]);
+}
+
+function areaListHTML() {
+  let sa = [], ea = [];
+  DATA.areas.forEach(a => a.questions.forEach((q, i) => {
+    const s = val(a.id, i, "self"), e = val(a.id, i, "external");
+    if (s != null) sa.push(s); if (e != null) ea.push(e);
+  }));
+  const avg = x => x.length ? x.reduce((p, c) => p + c, 0) / x.length : null;
+  const laneDone = state.lane === "self" ? sa.length : ea.length;
+
+  return `
+  <div class="card tight">
+    <div class="card-title">${esc(state.client || "Unnamed client")}</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:9px">
+      ${ring(laneDone / TOTAL_Q, 52, laneDone, TOTAL_Q)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600">${laneDone} of ${TOTAL_Q} scored</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">${esc(laneName(state.lane))} &middot; ${DATA.areas.length} areas</div>
+      </div>
+      <div style="text-align:right;flex:none">
+        <div style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);font-weight:650">Avg</div>
+        <div style="font-size:22px;font-weight:680;font-variant-numeric:tabular-nums;line-height:1.1">${fmt(state.lane === "self" ? avg(sa) : avg(ea))}</div>
+      </div>
+    </div>
+  </div>
+  ${laneSwitchHTML()}
+  <div class="section-label">Assessment areas</div>
+  <div class="arealist">
+    ${DATA.areas.map(a => {
+      const st = areaStats(a);
+      const done = state.lane === "self" ? st.saN : st.eaN;
+      const mine = state.lane === "self" ? st.sa : st.ea;
+      return `<button class="arearow" data-area="${a.id}">
+        ${ring(done / st.n, 46, done, st.n)}
+        <div class="meta">
+          <div class="nm">${esc(a.name)}</div>
+          <div class="dt"><span>${done}/${st.n} scored</span><span>&middot;</span><span>avg ${fmt(mine)}</span></div>
+        </div>
+        <div class="chev">&#8250;</div>
+      </button>`;
+    }).join("")}
+  </div>`;
+}
+
+function laneSwitchHTML() {
+  return `<div class="lanes" role="group" aria-label="Which assessment am I completing">
+    <button data-lane="self" aria-pressed="${state.lane === "self"}"><i class="swatch sw1"></i>Self</button>
+    <button data-lane="external" aria-pressed="${state.lane === "external"}"><i class="swatch sw2"></i>External</button>
+  </div>`;
+}
+
+function matches(q, aid, i) {
+  if (ui.query) {
+    const t = (q.q + " " + q.subject).toLowerCase();
+    if (!ui.query.toLowerCase().split(/\s+/).every(w => t.includes(w))) return false;
+  }
+  const v = val(aid, i, state.lane);
+  if (ui.filter === "todo" && v != null) return false;
+  if (ui.filter === "done" && v == null) return false;
+  if (ui.filter === "gap") {
+    const s = val(aid, i, "self"), e = val(aid, i, "external");
+    if (s == null || e == null || Math.abs(e - s) < 2) return false;
+  }
+  return true;
+}
+
+function areaDetailHTML(a) {
+  const st = areaStats(a);
+  const done = state.lane === "self" ? st.saN : st.eaN;
+  const flat = ui.query || ui.filter !== "all";
+  const subs = subjectsOf(a);
+  const shown = subs.map(s => ({ name: s.name, qs: s.qs.filter(q => matches(q, a.id, q.__i)) })).filter(s => s.qs.length);
+  const nShown = shown.reduce((n, s) => n + s.qs.length, 0);
+
+  return `
+  ${laneSwitchHTML()}
+  <div class="card tight">
+    <div style="display:flex;align-items:center;gap:13px">
+      ${ring(done / st.n, 46, done, st.n)}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600">${done}/${st.n} scored &middot; avg ${fmt(state.lane === "self" ? st.sa : st.ea)}</div>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">${subs.length} subject areas</div>
+      </div>
+      ${st.both ? gapChip(st.gap) : ""}
+    </div>
+  </div>
+  <div class="searchwrap">
+    <input type="search" id="qsearch" placeholder="Search questions" value="${esc(ui.query)}" enterkeyhint="search" autocapitalize="none">
+    ${ui.query ? `<button class="clr" id="qclear" aria-label="Clear search">&#10005;</button>` : ""}
+  </div>
+  <div class="filters">
+    <button class="chip" data-filter="all" aria-pressed="${ui.filter === "all"}">All ${st.n}</button>
+    <button class="chip" data-filter="todo" aria-pressed="${ui.filter === "todo"}">Unanswered ${st.n - done}</button>
+    <button class="chip" data-filter="done" aria-pressed="${ui.filter === "done"}">Answered ${done}</button>
+    <button class="chip" data-filter="gap" aria-pressed="${ui.filter === "gap"}">Gap &ge; 2</button>
+  </div>
+  ${nShown === 0
+    ? `<div class="empty"><div class="big">Nothing to show</div><div>No questions match this filter or search.</div></div>`
+    : shown.map(s => {
+      const key = a.id + "::" + s.name;
+      const open = flat ? true : !!ui.open[key];
+      const sdone = s.qs.filter(q => val(a.id, q.__i, state.lane) != null).length;
+      const sst = stats(s.qs, a.id);
+      return `<div class="subjgroup">
+        <button class="subjhead" data-subj="${esc(key)}" aria-expanded="${open}">
+          <span class="caret">&#9654;</span>
+          <span class="nm">${esc(s.name)}</span>
+          <span class="cnt">${sdone}/${s.qs.length}</span>
+          <span class="dualpair" aria-hidden="true">
+            <span class="${sst.sa != null ? "d1" : "dn"}">${sst.sa != null ? fmt(sst.sa) : "–"}</span>
+            <span class="${sst.ea != null ? "d2" : "dn"}">${sst.ea != null ? fmt(sst.ea) : "–"}</span>
+          </span>
+        </button>
+        <div class="subjbody" ${open ? "" : "hidden"}>${s.qs.map(q => qCardHTML(a, q)).join("")}</div>
+      </div>`;
+    }).join("")}`;
+}
+
+function qCardHTML(a, q) {
+  const i = q.__i, mine = val(a.id, i, state.lane), other = state.lane === "self" ? "external" : "self";
+  const otherV = val(a.id, i, other), myC = cmt(a.id, i, state.lane), otherC = cmt(a.id, i, other);
+  const lvl = mine != null ? LEVELS[mine - 1] : null;
+  return `<div class="qcard lane-${state.lane}" data-q="${a.id}|${i}" id="q-${a.id}-${i}">
+    <span class="subjtag">${esc(q.subject)}</span>
+    <div class="qhead"><span class="qnum">Q${i + 1}</span><div class="qtext">${esc(q.q)}</div></div>
+    <div class="scale" role="group" aria-label="${esc(laneName(state.lane))} score, 1 to 8">
+      ${LEVELS.map((L, k) => `<button data-score="${k + 1}" aria-pressed="${mine === k + 1}" aria-label="${k + 1} — ${esc(L[0])}">${k + 1}</button>`).join("")}
+    </div>
+    <div class="scalefoot">
+      <div class="levelname ${lvl ? "" : "empty"}">${lvl ? esc(mine + " · " + lvl[0]) : "Not yet scored"}</div>
+      ${otherV != null ? `<div class="otherlane"><i class="swatch ${other === "self" ? "sw1" : "sw2"}"></i>${other === "self" ? "Self" : "External"} ${otherV}</div>` : ""}
+    </div>
+    <div class="qactions">
+      <button class="minibtn ${myC ? "on" : ""}" data-act="comment">&#9998; ${myC ? "Edit note" : "Add note"}</button>
+      ${mine != null ? `<button class="minibtn" data-act="clear">Clear score</button>` : ""}
+    </div>
+    <div class="cmtwrap" hidden>
+      <label>${esc(laneName(state.lane))} comments</label>
+      <textarea data-cmt placeholder="Evidence, rationale, objectives…">${esc(myC)}</textarea>
+      <div class="qactions"><button class="minibtn" data-act="savecmt">Save note</button><button class="minibtn" data-act="cancelcmt">Cancel</button></div>
+    </div>
+    ${myC ? `<div class="savedcmt"><b>${esc(state.lane === "self" ? "Self note" : "External note")}</b>${esc(myC)}</div>` : ""}
+    ${otherC ? `<div class="savedcmt"><b>${esc(other === "self" ? "Self note" : "External note")}</b>${esc(otherC)}</div>` : ""}
+  </div>`;
+}
+/* ============================================================
+   DASHBOARD — charts, slicer filters, gap analysis
+   Mirrors the workbook Dashboard: a radar and a grouped bar of
+   Self vs External, driven by an Assessment Area slicer, at either
+   area or subject level (the workbook's two pivot levels).
+   ============================================================ */
+const MAXS = 8;
+
+/* ---------- slicer ---------- */
+function activeAreas() {
+  const sel = ui.areaFilter;
+  if (!sel || !sel.length) return DATA.areas;
+  const set = new Set(sel);
+  const hit = DATA.areas.filter(a => set.has(a.id));
+  return hit.length ? hit : DATA.areas;
+}
+
+/* ---------- category rollups ---------- */
+function chartCats() {
+  const areas = activeAreas();
+  if (ui.level === "subject") {
+    const out = [];
+    areas.forEach(a => subjectsOf(a).forEach(s => {
+      out.push({ key: a.id + "::" + s.name, name: s.name, area: a.name, aid: a.id, st: stats(s.qs, a.id) });
+    }));
+    return out;
+  }
+  return areas.map(a => ({ key: a.id, name: a.name, area: a.name, aid: a.id, st: areaStats(a) }));
+}
+
+function filteredQuestions() {
+  const out = [];
+  activeAreas().forEach(a => a.questions.forEach((q, i) => out.push({ a, q, i })));
+  return out;
+}
+
+function overallStats() {
+  const sa = [], ea = [];
+  let both = 0, n = 0;
+  filteredQuestions().forEach(({ a, i }) => {
+    n++;
+    const s = val(a.id, i, "self"), e = val(a.id, i, "external");
+    if (s != null) sa.push(s);
+    if (e != null) ea.push(e);
+    if (s != null && e != null) both++;
+  });
+  const avg = x => x.length ? x.reduce((p, c) => p + c, 0) / x.length : null;
+  const oSa = avg(sa), oEa = avg(ea);
+  return { n, saN: sa.length, eaN: ea.length, both, sa: oSa, ea: oEa, gap: (oSa != null && oEa != null) ? oEa - oSa : null };
+}
+
+const svgEsc = s => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const short = (s, n) => s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
+
+/* Radar spokes have little horizontal room, so shorten the long standard words
+   and wrap what's left over two lines rather than truncating mid-word. */
+const ABBR = [[/\bManagement\b/g, "Mgmt"], [/\bProgramme\b/g, "Prog"], [/\bAssessment\b/g, "Assmt"],
+              [/\bContinuous\b/g, "Cont."], [/\bCommunication\b/g, "Comms"], [/\bImprovement\b/g, "Improv."]];
+function chartLabel(s) {
+  let t = String(s);
+  ABBR.forEach(([re, to]) => { t = t.replace(re, to); });
+  return t;
+}
+function wrapLabel(s, maxChars, maxLines) {
+  const words = chartLabel(s).split(/\s+/);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? cur + " " + w : w;
+    if (next.length <= maxChars || !cur) { cur = next; continue; }
+    lines.push(cur); cur = w;
+    if (lines.length === maxLines - 1) break;
+  }
+  if (cur && lines.length < maxLines) lines.push(cur);
+  const used = lines.join(" ").length;
+  const total = chartLabel(s).length;
+  if (used < total) lines[lines.length - 1] = short(lines[lines.length - 1] + "…", maxChars + 1);
+  return lines;
+}
+
+/* ============================================================
+   RADAR
+   ============================================================ */
+/* Spoke labels only fit when the plot is wide. On a phone the numbered key
+   below the radar is clearer than seven truncated names crowding the edge. */
+const numberedFor = N => N > 8 || window.innerWidth < 480;
+
+function radarSVG(cats, W) {
+  const N = cats.length;
+  if (!N) return "";
+  const size = Math.min(W, 520);
+  const R = (size - (numberedFor(N) ? 62 : 108)) / 2;
+  const cx = size / 2, cy = size / 2;
+  const numbered = numberedFor(N);              // long label sets get a numbered key instead
+  const angle = i => (-90 + i * 360 / N) * Math.PI / 180;
+  const pt = (i, v) => {
+    const a = angle(i), r = R * (v / MAXS);
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  };
+  let g = "";
+
+  // rings + scale labels
+  [2, 4, 6, 8].forEach(v => {
+    const pts = [];
+    for (let i = 0; i < N; i++) pts.push(pt(i, v).map(n => n.toFixed(1)).join(","));
+    g += `<polygon points="${pts.join(" ")}" fill="none" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${(cx + 5).toFixed(1)}" y="${(cy - R * (v / MAXS) + 3.5).toFixed(1)}" font-size="9.5" fill="var(--text-muted)" font-family="inherit">${v}</text>`;
+  });
+
+  // spokes + category labels
+  for (let i = 0; i < N; i++) {
+    const [x, y] = pt(i, MAXS);
+    g += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--grid)" stroke-width="1"/>`;
+    const a = angle(i), lx = cx + (R + 13) * Math.cos(a), ly = cy + (R + 13) * Math.sin(a);
+    const cos = Math.cos(a);
+    const anchor = Math.abs(cos) < 0.25 ? "middle" : (cos > 0 ? "start" : "end");
+    const on = ui.pick === cats[i].key;
+    const lines = numbered ? [String(i + 1)] : wrapLabel(cats[i].name, size < 400 ? 13 : 17, 2);
+    const y0 = ly + 3.5 - (lines.length - 1) * 5.5;
+    g += `<text x="${lx.toFixed(1)}" y="${y0.toFixed(1)}" text-anchor="${anchor}" font-size="${numbered ? 11.5 : 10.5}"
+      font-weight="${on ? 700 : 500}" fill="${on ? "var(--text-primary)" : "var(--text-secondary)"}"
+      font-family="inherit">${lines.map((ln, k) => `<tspan x="${lx.toFixed(1)}" dy="${k ? 11 : 0}">${svgEsc(ln)}</tspan>`).join("")}</text>`;
+  }
+
+  // series — self drawn first so external reads on top
+  [["sa", "var(--series-1)"], ["ea", "var(--series-2)"]].forEach(([k, col]) => {
+    if (cats.every(c => c.st[k] == null)) return;
+    const pts = cats.map((c, i) => pt(i, c.st[k] == null ? 0 : c.st[k]));
+    g += `<polygon points="${pts.map(p => p.map(n => n.toFixed(1)).join(",")).join(" ")}"
+      fill="${col}" fill-opacity="0.10" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach((p, i) => {
+      if (cats[i].st[k] == null) return;
+      g += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${ui.pick === cats[i].key ? 5.5 : 4}"
+        fill="${col}" stroke="var(--surface-1)" stroke-width="2"/>`;
+    });
+  });
+
+  // transparent tap wedges — the hit area is the whole sector, not the 8px dot
+  for (let i = 0; i < N; i++) {
+    const a0 = angle(i) - Math.PI / N, a1 = angle(i) + Math.PI / N;
+    const p0 = [cx + (R + 20) * Math.cos(a0), cy + (R + 20) * Math.sin(a0)];
+    const p1 = [cx + (R + 20) * Math.cos(a1), cy + (R + 20) * Math.sin(a1)];
+    g += `<polygon class="wedge" points="${cx},${cy} ${p0.map(n => n.toFixed(1)).join(",")} ${p1.map(n => n.toFixed(1)).join(",")}"
+      fill="transparent" data-cat="${svgEsc(cats[i].key)}" tabindex="0" role="button"
+      aria-label="${svgEsc(cats[i].name)}: self ${fmt(cats[i].st.sa)}, external ${fmt(cats[i].st.ea)}"/>`;
+  }
+
+  return `<svg class="radar" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img"
+    aria-label="Radar chart comparing self and external maturity across ${N} categories">${g}</svg>`;
+}
+
+function radarKeyHTML(cats) {
+  if (!numberedFor(cats.length)) return "";
+  return `<ol class="radarkey">${cats.map((c, i) =>
+    `<li data-cat="${esc(c.key)}" class="${ui.pick === c.key ? "on" : ""}"><b>${i + 1}</b><span>${esc(c.name)}</span></li>`).join("")}</ol>`;
+}
+
+/* ============================================================
+   GROUPED BAR
+   ============================================================ */
+function barsSVG(cats, W) {
+  const N = cats.length;
+  if (!N) return "";
+  const gutter = 36, rowH = 50, top = 6, axisH = 20;
+  const plotW = W - gutter;
+  const H = top + N * rowH + axisH;
+  const x = v => (v == null ? 0 : (v / MAXS) * plotW);
+  let g = "";
+
+  cats.forEach((c, i) => {
+    if (ui.pick !== c.key) return;
+    g += `<rect x="-8" y="${top + i * rowH - 2}" width="${W + 10}" height="${rowH - 2}" rx="8" fill="var(--surface-0)"/>`;
+  });
+
+  [0, 2, 4, 6, 8].forEach(v => {
+    const gx = x(v).toFixed(1);
+    g += `<line x1="${gx}" y1="${top}" x2="${gx}" y2="${top + N * rowH - 6}" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${gx}" y="${H - 5}" font-size="10" fill="var(--text-muted)" font-family="inherit"
+      text-anchor="${v === 0 ? "start" : v === MAXS ? "end" : "middle"}">${v}</text>`;
+  });
+
+  cats.forEach((c, i) => {
+    const y0 = top + i * rowH;
+    const on = ui.pick === c.key;
+    g += `<text x="0" y="${y0 + 12}" font-size="12.5" font-weight="${on ? 700 : 600}" fill="var(--text-primary)"
+      font-family="inherit">${svgEsc(short(c.name, Math.max(18, Math.floor(W / 7.6))))}</text>`;
+
+    // two 11px bars, 2px surface gap between them, 4px rounded data-end
+    [["sa", "var(--series-1)"], ["ea", "var(--series-2)"]].forEach(([k, col], j) => {
+      const v = c.st[k], by = y0 + 19 + j * 13;
+      if (v == null) {
+        if (j === 0) g += `<text x="0" y="${by + 17}" font-size="10.5" fill="var(--text-muted)" font-family="inherit">not scored</text>`;
+        return;
+      }
+      const w = Math.max(4, x(v));
+      g += `<path d="M0 ${by} H${(w - 4).toFixed(1)} a4 4 0 0 1 4 4 v3 a4 4 0 0 1 -4 4 H0 Z" fill="${col}"/>`;
+      g += `<text x="${(w + 6).toFixed(1)}" y="${by + 9}" font-size="11" font-weight="650"
+        fill="var(--text-secondary)" font-family="inherit">${fmt(v)}</text>`;
+    });
+
+    g += `<rect x="-8" y="${y0 - 2}" width="${W + 10}" height="${rowH - 2}" fill="transparent"
+      data-cat="${svgEsc(c.key)}" tabindex="0" role="button"
+      aria-label="${svgEsc(c.name)}: self ${fmt(c.st.sa)}, external ${fmt(c.st.ea)}"/>`;
+  });
+
+  return `<svg class="barchart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img"
+    aria-label="Grouped bar chart comparing self and external maturity across ${N} categories">${g}</svg>`;
+}
+
+/* ============================================================
+   VIEW
+   ============================================================ */
+const legendHTML = `<div class="legend">
+  <span><i style="background:var(--series-1)"></i>Self assessment</span>
+  <span><i style="background:var(--series-2)"></i>External assessment</span></div>`;
+
+function slicerHTML() {
+  const sel = new Set(ui.areaFilter || []);
+  return `<div class="slicer">
+    <div class="slicer-head">
+      <span>Assessment area</span>
+      ${sel.size ? `<button class="linkbtn" data-slice="__clear">Clear (${sel.size})</button>`
+                 : `<span class="slicer-all">All ${DATA.areas.length}</span>`}
+    </div>
+    <div class="filters">
+      ${DATA.areas.map(a => `<button class="chip" data-slice="${a.id}" aria-pressed="${sel.has(a.id)}">${esc(a.name)}</button>`).join("")}
+    </div>
+    <div class="lanes" role="group" aria-label="Detail level" style="margin:10px 0 0">
+      <button data-level="area" aria-pressed="${ui.level !== "subject"}">By area</button>
+      <button data-level="subject" aria-pressed="${ui.level === "subject"}">By subject</button>
+    </div>
+  </div>`;
+}
+
+function readoutHTML(cats, withDrill) {
+  const c = ui.pick == null ? null : cats.find(x => x.key === ui.pick);
+  if (!c) return `<div class="readout muted">Tap a point or a bar for its figures.</div>`;
+  return `<div class="readout">
+    <div class="ro-name">${esc(c.name)}${ui.level === "subject" ? `<span class="ro-area">${esc(c.area)}</span>` : ""}</div>
+    <div class="ro-vals">
+      <span><i class="swatch sw1"></i><b>${fmt(c.st.sa)}</b> self</span>
+      <span><i class="swatch sw2"></i><b>${fmt(c.st.ea)}</b> external</span>
+      ${gapChip(c.st.gap)}
+      <span class="ro-n">${c.st.n} q</span>
+    </div>
+    ${withDrill && ui.level === "area"
+      ? `<button class="minibtn" style="margin-top:9px" data-drill="${esc(c.aid)}">Break down by subject &#8250;</button>`
+      : `<button class="minibtn" style="margin-top:9px" data-openarea="${esc(c.aid)}">Open questions &#8250;</button>`}
+  </div>`;
+}
+
+function renderDash() {
+  const v = $("#view-dash");
+  const cats = chartCats();
+  if (ui.pick != null && !cats.some(c => c.key === ui.pick)) ui.pick = null;
+
+  const o = overallStats();
+  const areas = activeAreas();
+  const scope = areas.length === DATA.areas.length ? "All areas"
+    : areas.length === 1 ? areas[0].name : areas.length + " areas selected";
+
+  const gaps = filteredQuestions().map(({ a, q, i }) => {
+    const s = val(a.id, i, "self"), e = val(a.id, i, "external");
+    return (s == null || e == null) ? null : { area: a.name, aid: a.id, subj: q.subject, q: q.q, s, e, g: e - s, i };
+  }).filter(Boolean).filter(x => x.g !== 0).sort((x, y) => Math.abs(y.g) - Math.abs(x.g)).slice(0, 12);
+
+  const radarTooMany = cats.length > 14;
+  const sorted = cats.slice().sort((a, b) => (a.st.sa == null ? 99 : a.st.sa) - (b.st.sa == null ? 99 : b.st.sa));
+
+  v.innerHTML = `
+  ${slicerHTML()}
+
+  <div class="hero">
+    <div class="tile">
+      <div class="lbl"><i class="swatch sw1"></i>Self</div>
+      <div class="val">${fmt(o.sa)}<small> /8</small></div>
+      <div class="cap">${o.saN} of ${o.n} scored</div>
+    </div>
+    <div class="tile">
+      <div class="lbl"><i class="swatch sw2"></i>External</div>
+      <div class="val">${fmt(o.ea)}<small> /8</small></div>
+      <div class="cap">${o.eaN} of ${o.n} scored</div>
+    </div>
+  </div>
+
+  <div class="card tight">
+    <div class="card-title" style="margin-bottom:7px">Overall alignment &middot; ${esc(scope)}</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:27px;font-weight:680;font-variant-numeric:tabular-nums;line-height:1.1">${o.gap == null ? "—" : (o.gap > 0 ? "+" : "") + fmt(o.gap)}</div>
+      <div style="flex:1;min-width:0;font-size:12.5px;color:var(--text-secondary);line-height:1.35">
+        ${o.gap == null ? "Both assessments needed to compare."
+          : Math.abs(o.gap) < 0.25 ? "External and self assessments broadly agree."
+          : o.gap < 0 ? "External assessor scores lower than self assessment — likely over-confidence."
+          : "External assessor scores higher than self assessment — likely under-recognised capability."}
+      </div>
+    </div>
+    <div class="meter" aria-hidden="true"><i style="width:${o.n ? ((o.both / o.n) * 100).toFixed(1) : 0}%"></i></div>
+    <div style="font-size:11.5px;color:var(--text-muted);margin-top:6px">${o.both} of ${o.n} questions comparable</div>
+  </div>
+
+  <div class="section-label">Maturity profile</div>
+  <div class="card">
+    <div class="card-note">Self versus external across ${cats.length} ${ui.level === "subject" ? "subjects" : "areas"}. The outer ring is 8, the top of the scale.</div>
+    ${legendHTML}
+    <div class="chart-wide"><div class="chart-host" data-chart="radar">${radarTooMany
+      ? `<div class="empty"><div class="big">Too many points for a radar</div><div>${cats.length} categories. Select a single assessment area above to see its subject radar &mdash; all ${cats.length} are still plotted in the bar chart below.</div></div>`
+      : ""}</div>${radarTooMany ? "" : radarKeyHTML(cats)}</div>
+    ${radarTooMany ? "" : readoutHTML(cats, true)}
+  </div>
+
+  <div class="section-label">Score comparison</div>
+  <div class="card">
+    <div class="card-note">Lowest maturity first, so the weakest ${ui.level === "subject" ? "subjects" : "areas"} sit at the top.</div>
+    ${legendHTML}
+    <div class="chart-host" data-chart="bars"></div>
+    ${readoutHTML(cats, true)}
+    <div class="qactions"><button class="minibtn" data-act="toggletable">${ui.showTable ? "Hide" : "Show"} table view</button></div>
+    ${ui.showTable ? `<div class="tablewrap" style="margin-top:10px"><table class="dt">
+      <thead><tr><th>${ui.level === "subject" ? "Subject" : "Area"}</th><th>Self</th><th>Ext</th><th>Gap</th><th>Q</th></tr></thead>
+      <tbody>${sorted.map(c => `<tr><td>${esc(c.name)}</td><td><b>${fmt(c.st.sa)}</b></td><td><b>${fmt(c.st.ea)}</b></td><td>${c.st.gap == null ? "—" : (c.st.gap > 0 ? "+" : "") + fmt(c.st.gap)}</td><td>${c.st.n}</td></tr>`).join("")}
+      <tr><td><b>${esc(scope)}</b></td><td><b>${fmt(o.sa)}</b></td><td><b>${fmt(o.ea)}</b></td><td>${o.gap == null ? "—" : (o.gap > 0 ? "+" : "") + fmt(o.gap)}</td><td>${o.n}</td></tr></tbody></table></div>` : ""}
+  </div>
+
+  <div class="section-label">Largest self vs external gaps</div>
+  <div class="card">
+    ${gaps.length === 0
+      ? `<div class="empty"><div class="big">No gaps to show</div><div>Score the same questions in both lanes to compare them.</div></div>`
+      : `<div class="card-note">Questions where the two assessments diverge most. Tap to open the question.</div>
+         <div class="gaplist">${gaps.map(x => `<button class="gapitem" style="text-align:left;width:100%;background:none" data-goto="${x.aid}|${x.i}">
+           <div class="txt"><div class="q">${esc(x.q)}</div><div class="a">${esc(x.area)} &middot; ${esc(x.subj)} &middot; self ${x.s} / ext ${x.e}</div></div>
+           ${gapChip(x.g)}
+         </button>`).join("")}</div>`}
+  </div>`;
+
+  drawCharts(cats, sorted, radarTooMany);
+}
+
+/* SVGs are generated at the container's measured pixel width, so their text
+   renders 1:1 rather than being scaled by a viewBox. */
+function drawCharts(cats, sorted, radarTooMany) {
+  document.querySelectorAll("#view-dash .chart-host").forEach(host => {
+    const W = Math.max(240, host.clientWidth);
+    if (host.dataset.chart === "radar") {
+      if (!radarTooMany) host.innerHTML = radarSVG(cats, W);
+    } else {
+      host.innerHTML = barsSVG(sorted, W);
+    }
+  });
+}
+
+/* ============================================================
+   SETUP / EXPORT
+   ============================================================ */
+function renderMore() {
+  $("#view-more").innerHTML = `
+  <div class="card">
+    <div class="card-title">Assessment details</div>
+    <div class="card-note">Shown on the dashboard and included in every export.</div>
+    <div class="field"><label for="fClient">Client</label><input id="fClient" value="${esc(state.client)}" placeholder="Client name" autocapitalize="words"></div>
+    <div class="field"><label for="fAssessor">Assessor</label><input id="fAssessor" value="${esc(state.assessor)}" placeholder="Your name" autocapitalize="words"></div>
+    <div class="field"><label for="fLane">Currently completing</label>
+      <select id="fLane"><option value="self" ${state.lane === "self" ? "selected" : ""}>Self assessment</option><option value="external" ${state.lane === "external" ? "selected" : ""}>External assessment</option></select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Export &amp; backup</div>
+    <div class="card-note">CSV opens in Excel with the same columns as the comparison workbook. JSON is a full backup you can reload here.</div>
+    <div class="btnrow">
+      <button class="bigbtn primary" data-act="csv">Export CSV for Excel</button>
+      <button class="bigbtn" data-act="json">Export JSON backup</button>
+      <button class="bigbtn" data-act="import">Restore from JSON backup</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Maturity scale</div>
+    <div class="card-note">1&ndash;8, as used in the source workbook. Level names are a generic maturity ladder &mdash; tell me your own definitions and they can be swapped in.</div>
+    <div class="scalelist">
+      ${LEVELS.map((L, i) => `<div class="scaleitem">
+        <div class="n" style="background:${"color-mix(in srgb,var(--accent) " + [10, 16, 22, 30, 38, 48, 60, 74][i] + "%,transparent)"}">${i + 1}</div>
+        <div class="d"><strong>${esc(L[0])}</strong><span>${esc(L[1])}</span></div></div>`).join("")}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">${NATIVE || INSTALLED ? "About this app" : "Add to your home screen"}</div>
+    <div class="help">
+      ${NATIVE
+        ? `Running as a native iOS app. Everything works offline &mdash; no server, no account, no network access at all.
+           Exports open the iOS share sheet so you can AirDrop, Mail or save to Files.`
+        : INSTALLED
+        ? `Installed to your home screen and running full screen. The whole app is cached on the device,
+           so it opens with no network &mdash; on a plane, at a client site, anywhere.`
+        : `Runs fully offline once installed &mdash; no server, no account.
+      <ol>
+        <li>Open this page in <b>Safari</b> on your iPhone or iPad (not Chrome &mdash; only Safari can install).</li>
+        <li>Tap the <b>Share</b> button, then <b>Add to Home Screen</b>.</li>
+        <li>Launch it from the icon &mdash; full screen, no browser chrome, works offline.</li>
+      </ol>`}
+      <p style="margin:10px 0 0">Answers are saved on the device as you tap${store.persistent ? "" : " <b>(unavailable in this preview &mdash; export before closing)</b>"}. Export JSON regularly if the assessment spans several sessions.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Reset</div>
+    <div class="card-note">The app ships preloaded with the data found in the workbook (${esc(DATA.client || "client")}) so the dashboard is populated. Clear it to start a clean assessment.</div>
+    <div class="btnrow">
+      <button class="bigbtn danger" data-act="blank">Start a blank assessment</button>
+      <button class="bigbtn" data-act="reseed">Reload workbook data</button>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:11.5px;color:var(--text-muted);padding:6px 0 4px">
+    ${TOTAL_Q} questions &middot; ${DATA.areas.length} areas &middot; from CVM Maturity Assessment Comparison v1.0
+  </div>`;
+}
+
+/* ---------- export ---------- */
+function csvCell(v) {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function buildCSV() {
+  const rows = [["Client", "Assessor", "Assessment Area", "Assessment Subject", "Question",
+    "Self Assessment", "External Assessment", "Gap (Ext-Self)", "Self Assessment Comments", "External Assessment Comments"]];
+  DATA.areas.forEach(a => a.questions.forEach((q, i) => {
+    const s = val(a.id, i, "self"), e = val(a.id, i, "external");
+    rows.push([state.client, state.assessor, a.name, q.subject, q.q, s == null ? "" : s, e == null ? "" : e,
+      (s != null && e != null) ? e - s : "", cmt(a.id, i, "self"), cmt(a.id, i, "external")]);
+  }));
+  return "﻿" + rows.map(r => r.map(csvCell).join(",")).join("\r\n");
+}
+function slug(s) { return (s || "assessment").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "assessment"; }
+function stamp() { const d = new Date(); const p = n => String(n).padStart(2, "0"); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()); }
+const INSTALLED = (() => {
+  try {
+    return window.navigator.standalone === true ||
+           (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  } catch (e) { return false; }
+})();
+const NATIVE = (() => {
+  try { return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.cvmExport); }
+  catch (e) { return false; }
+})();
+function haptic(kind) {
+  try { window.webkit.messageHandlers.cvmHaptic.postMessage(kind || "light"); } catch (e) { /* web: no-op */ }
+}
+async function download(text, filename, mime) {
+  if (NATIVE) {
+    try {
+      window.webkit.messageHandlers.cvmExport.postMessage({ name: filename, mime: mime, text: text });
+      return;
+    } catch (e) { /* fall through to web paths */ }
+  }
+  const blob = new Blob([text], { type: mime });
+  try {
+    const file = new File([blob], filename, { type: mime });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: filename });
+      return;
+    }
+  } catch (e) { if (e && e.name === "AbortError") return; }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast("Saved " + filename);
+}
+
+/* ============================================================
+   RENDER + EVENTS
+   ============================================================ */
+function chrome() {
+  const inArea = ui.tab === "assess" && ui.area, inDashArea = false;
+  $("#backBtn").hidden = !(inArea || inDashArea);
+  $("#fabrow").hidden = !inArea;
+  document.body.classList.toggle("has-fab", !!inArea);
+  const t = $("#title"), s = $("#subtitle");
+  if (inArea) { t.textContent = AREA_BY_ID[ui.area].name; s.textContent = laneName(state.lane) + " · " + (state.client || "no client"); }
+  else if (inDashArea) { t.textContent = AREA_BY_ID[ui.dashArea].name; s.textContent = "Self vs external by subject"; }
+  else if (ui.tab === "dash") { t.textContent = "Dashboard"; s.textContent = state.client || "Comparison analysis"; }
+  else if (ui.tab === "more") { t.textContent = "Setup"; s.textContent = "Details, export, scale"; }
+  else { t.textContent = "CVM Maturity"; s.textContent = "Contract Value Management assessment"; }
+  document.querySelectorAll("#tabbar button").forEach(b => {
+    if (b.dataset.tab === ui.tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  ["assess", "dash", "more"].forEach(k => { $("#view-" + k).hidden = ui.tab !== k; });
+}
+function render(keepScroll) {
+  const y = window.scrollY;
+  // chrome() first: it unhides the target view, so charts can measure a real
+  // container width instead of 0 (a hidden element has no layout).
+  chrome();
+  if (ui.tab === "assess") renderAssess();
+  else if (ui.tab === "dash") renderDash();
+  else renderMore();
+  if (keepScroll) window.scrollTo(0, y); else window.scrollTo(0, 0);
+}
+
+/* theme */
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", state.theme);
+  const icons = {
+    auto: '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 000 16z" fill="currentColor" stroke="none"/></svg>',
+    light: '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/></svg>',
+    dark: '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.2 8.2 0 019.5 4 8.4 8.4 0 1020 14.5z"/></svg>'
+  };
+  $("#themeBtn").innerHTML = icons[state.theme] || icons.auto;
+  $("#themeBtn").title = "Appearance: " + state.theme;
+  $("#themeBtn").setAttribute("aria-label", "Appearance: " + state.theme + ". Tap to change.");
+}
+$("#themeBtn").addEventListener("click", () => {
+  state.theme = state.theme === "auto" ? "light" : state.theme === "light" ? "dark" : "auto";
+  applyTheme(); save(); toast("Appearance: " + state.theme);
+});
+
+$("#tabbar").addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]"); if (!b) return;
+  ui.tab = b.dataset.tab; render();
+});
+$("#backBtn").addEventListener("click", () => {
+  if (ui.tab === "assess") { ui.area = null; ui.query = ""; ui.filter = "all"; }
+  else ui.dashArea = null;
+  render();
+});
+
+function gotoQuestion(aid, i) {
+  ui.tab = "assess"; ui.area = aid; ui.filter = "all"; ui.query = "";
+  const q = AREA_BY_ID[aid].questions[i];
+  ui.open[aid + "::" + q.subject] = true;
+  render();
+  requestAnimationFrame(() => {
+    const el = document.getElementById("q-" + aid + "-" + i);
+    if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.style.outline = "2px solid var(--accent)"; el.style.outlineOffset = "2px"; setTimeout(() => { el.style.outline = ""; }, 1600); }
+  });
+}
+
+document.querySelector("main").addEventListener("click", e => {
+  const t = e.target;
+
+  const lane = t.closest("[data-lane]");
+  if (lane) { state.lane = lane.dataset.lane; haptic("light"); save(); render(true); return; }
+
+  const arow = t.closest("[data-area]");
+  if (arow) { ui.area = arow.dataset.area; ui.filter = "all"; ui.query = ""; render(); return; }
+
+  const slice = t.closest("[data-slice]");
+  if (slice) {
+    const id = slice.dataset.slice;
+    if (id === "__clear") ui.areaFilter = [];
+    else {
+      const set = new Set(ui.areaFilter || []);
+      set.has(id) ? set.delete(id) : set.add(id);
+      ui.areaFilter = [...set];
+    }
+    ui.pick = null; haptic("light"); render(true); return;
+  }
+
+  const lvl = t.closest("[data-level]");
+  if (lvl) { ui.level = lvl.dataset.level; ui.pick = null; haptic("light"); render(true); return; }
+
+  const drill = t.closest("[data-drill]");
+  if (drill) { ui.areaFilter = [drill.dataset.drill]; ui.level = "subject"; ui.pick = null; haptic("light"); render(); return; }
+
+  const oa = t.closest("[data-openarea]");
+  if (oa) { ui.tab = "assess"; ui.area = oa.dataset.openarea; render(); return; }
+
+  const cat = t.closest("[data-cat]");
+  if (cat) {
+    const k = cat.dataset.cat;
+    ui.pick = ui.pick === k ? null : k;
+    haptic("light"); render(true); return;
+  }
+
+  const openA = t.closest("[data-open-area]");
+  if (openA) { ui.tab = "assess"; ui.area = openA.dataset.openArea; ui.dashArea = null; render(); return; }
+
+  const goto = t.closest("[data-goto]");
+  if (goto) { const [aid, i] = goto.dataset.goto.split("|"); gotoQuestion(aid, +i); return; }
+
+  const subj = t.closest("[data-subj]");
+  if (subj) {
+    const k = subj.dataset.subj; ui.open[k] = !ui.open[k];
+    subj.setAttribute("aria-expanded", String(!!ui.open[k]));
+    subj.parentElement.querySelector(".subjbody").hidden = !ui.open[k];
+    return;
+  }
+
+  const f = t.closest("[data-filter]");
+  if (f) { ui.filter = f.dataset.filter; render(true); return; }
+
+  if (t.closest("#qclear")) { ui.query = ""; render(true); return; }
+
+  const sc = t.closest("[data-score]");
+  if (sc) {
+    const card = sc.closest(".qcard"), [aid, i] = card.dataset.q.split("|");
+    const n = +sc.dataset.score, cur = val(aid, +i, state.lane);
+    setResp(aid, +i, state.lane === "self" ? { sa: n === cur ? null : n } : { ea: n === cur ? null : n });
+    haptic(n === cur ? "soft" : "light");
+    refreshCard(card, aid, +i);
+    return;
+  }
+
+  const act = t.closest("[data-act]");
+  if (act) { handleAct(act.dataset.act, act); return; }
+});
+
+function refreshCard(card, aid, i) {
+  const a = AREA_BY_ID[aid], q = Object.assign({}, a.questions[i], { __i: i });
+  const tmp = document.createElement("div");
+  tmp.innerHTML = qCardHTML(a, q);
+  card.replaceWith(tmp.firstElementChild);
+}
+
+function handleAct(act, el) {
+  const card = el.closest(".qcard");
+  if (card) {
+    const [aid, iS] = card.dataset.q.split("|"), i = +iS;
+    if (act === "comment") { const w = card.querySelector(".cmtwrap"); w.hidden = !w.hidden; if (!w.hidden) card.querySelector("textarea").focus(); return; }
+    if (act === "cancelcmt") { card.querySelector(".cmtwrap").hidden = true; return; }
+    if (act === "savecmt") {
+      const txt = card.querySelector("textarea").value.trim();
+      setResp(aid, i, state.lane === "self" ? { sac: txt } : { eac: txt });
+      refreshCard(card, aid, i); toast("Note saved"); return;
+    }
+    if (act === "clear") {
+      setResp(aid, i, state.lane === "self" ? { sa: null } : { ea: null });
+      refreshCard(card, aid, i); return;
+    }
+  }
+  if (act === "toggletable") { ui.showTable = !ui.showTable; render(true); return; }
+  if (act === "csv") { download(buildCSV(), "cvm-assessment-" + slug(state.client) + "-" + stamp() + ".csv", "text/csv;charset=utf-8"); return; }
+  if (act === "json") {
+    download(JSON.stringify({ app: "cvm-assess", version: 1, exported: new Date().toISOString(), state }, null, 2),
+      "cvm-assessment-" + slug(state.client) + "-" + stamp() + ".json", "application/json");
+    return;
+  }
+  if (act === "import") { $("#fileIn").click(); return; }
+  if (act === "blank") {
+    if (!confirm("Clear all scores and notes and start a blank assessment?")) return;
+    state.responses = {}; state.seeded = false; save(); toast("Blank assessment started"); render(); return;
+  }
+  if (act === "reseed") {
+    if (!confirm("Reload the scores and notes from the workbook? This replaces current answers.")) return;
+    state.responses = seedFromWorkbook(); state.seeded = true; save(); toast("Workbook data reloaded"); render(); return;
+  }
+}
+
+document.querySelector("main").addEventListener("input", e => {
+  if (e.target.id === "qsearch") {
+    clearTimeout(window.__st);
+    const v = e.target.value;
+    window.__st = setTimeout(() => { ui.query = v; render(true); const s = $("#qsearch"); if (s) { s.focus(); s.setSelectionRange(v.length, v.length); } }, 260);
+  }
+});
+document.querySelector("main").addEventListener("change", e => {
+  if (e.target.id === "fClient") { state.client = e.target.value.trim(); save(); chrome(); }
+  if (e.target.id === "fAssessor") { state.assessor = e.target.value.trim(); save(); }
+  if (e.target.id === "fLane") { state.lane = e.target.value; save(); toast("Now completing: " + laneName(state.lane)); }
+});
+document.querySelector("main").addEventListener("blur", e => {
+  if (e.target.matches("textarea[data-cmt]")) {
+    const card = e.target.closest(".qcard"); if (!card) return;
+    const [aid, iS] = card.dataset.q.split("|"), i = +iS, txt = e.target.value.trim();
+    if (txt !== cmt(aid, i, state.lane)) setResp(aid, i, state.lane === "self" ? { sac: txt } : { eac: txt });
+  }
+}, true);
+
+$("#fileIn").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const o = JSON.parse(r.result), s = o && o.state ? o.state : o;
+      if (!s || typeof s.responses !== "object") throw 0;
+      state = Object.assign(state, s); save(); applyTheme(); render();
+      toast("Backup restored");
+    } catch (err) { alert("That file could not be read as a CVM assessment backup."); }
+    e.target.value = "";
+  };
+  r.readAsText(f);
+});
+
+/* FAB: jump between unanswered */
+function unansweredIdx(aid) {
+  return AREA_BY_ID[aid].questions.map((q, i) => i).filter(i => val(aid, i, state.lane) == null);
+}
+$("#fabNext").addEventListener("click", () => {
+  if (!ui.area) return;
+  const list = unansweredIdx(ui.area);
+  if (!list.length) { toast("All " + AREA_BY_ID[ui.area].questions.length + " questions scored"); return; }
+  const y = window.scrollY;
+  let target = list[0];
+  for (const i of list) {
+    const el = document.getElementById("q-" + ui.area + "-" + i);
+    if (el && el.getBoundingClientRect().top > 90) { target = i; break; }
+  }
+  gotoQuestion(ui.area, target);
+  window.scrollTo(0, y);
+  requestAnimationFrame(() => {
+    const el = document.getElementById("q-" + ui.area + "-" + target);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+});
+$("#fabPrev").addEventListener("click", () => {
+  if (!ui.area) return;
+  const aid = ui.area;
+  const list = AREA_BY_ID[aid].questions.map((q, i) => {
+    const s = val(aid, i, "self"), e = val(aid, i, "external");
+    return (s != null && e != null) ? { i, g: Math.abs(e - s) } : null;
+  }).filter(Boolean).sort((a, b) => b.g - a.g);
+  if (!list.length || list[0].g === 0) { toast("No self vs external gaps in this area"); return; }
+  gotoQuestion(aid, list[0].i);
+});
+
+/* SVG marks are focusable buttons — Enter/Space must act like a tap. */
+document.querySelector("main").addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const cat = e.target.closest && e.target.closest("[data-cat]");
+  if (!cat) return;
+  e.preventDefault();
+  ui.pick = ui.pick === cat.dataset.cat ? null : cat.dataset.cat;
+  render(true);
+});
+
+/* Charts are sized to the measured container, so redraw them when that changes
+   (rotation, Split View, Stage Manager, desktop window resize). */
+let resizeTimer = null;
+function onResize() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (ui.tab === "dash") render(true); }, 180);
+}
+window.addEventListener("resize", onResize);
+window.addEventListener("orientationchange", onResize);
+
+applyTheme();
+render();
+</script>
+</body>
+</html>
