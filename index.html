@@ -10,9 +10,7 @@
 <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
 <title>CVM Maturity Assessment</title>
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="manifest" href="manifest.webmanifest">
+<!-- icons come from the native app bundle -->
 <style>
 :root{
   color-scheme: light;
@@ -314,6 +312,49 @@ svg.barchart{align-self:stretch}
 .checkrow span{font-size:14px;font-weight:600;line-height:1.35}
 .checkrow small{display:block;font-size:12px;font-weight:400;color:var(--text-muted);margin-top:2px}
 
+/* ---------- import review sheet ---------- */
+body.sheet-open{overflow:hidden}
+.sheet-backdrop{position:fixed;inset:0;background:rgba(11,11,11,.45);z-index:300;
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:310;background:var(--surface-1);
+  border-radius:18px 18px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.3);
+  display:flex;flex-direction:column;max-height:92vh;
+  padding-bottom:env(safe-area-inset-bottom)}
+.sheet-head{padding:18px 18px 12px;border-bottom:1px solid var(--border)}
+.sheet-head h2{font-size:18px}
+.sheet-head p{margin:5px 0 0;font-size:12.5px;color:var(--text-muted);line-height:1.4}
+.sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 18px;flex:1}
+.sheet-foot{padding:12px 18px 16px;border-top:1px solid var(--border);background:var(--surface-1);
+  border-radius:0 0 18px 18px}
+.tally{font-size:12.5px;color:var(--text-secondary);margin-bottom:10px;text-align:center}
+.tally b{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.sheet-actions{display:flex;gap:9px}
+.sheet-actions .bigbtn{flex:1}
+.bigbtn[disabled]{opacity:.45}
+.subcard{border:1px solid var(--border);border-radius:12px;padding:12px 13px;margin-bottom:10px;background:var(--surface-2)}
+.subcard.flagged{border-color:color-mix(in srgb,var(--warning) 55%,transparent)}
+.subcard-top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.subcard .who{font-size:15px;font-weight:650;line-height:1.25}
+.subcard .meta{font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.35}
+.subcard .meta.file{font-size:11px;opacity:.8}
+.subcard .counts{flex:none;font-size:11.5px;font-weight:650;color:var(--text-secondary);
+  background:var(--surface-0);border:1px solid var(--border);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.flag{font-size:12px;line-height:1.4;color:var(--text-secondary);margin-top:9px;
+  background:color-mix(in srgb,var(--warning) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--warning) 38%,transparent);border-radius:9px;padding:8px 10px}
+.lanepick{display:flex;gap:6px;background:var(--surface-0);border:1px solid var(--border);
+  border-radius:11px;padding:3px;margin-top:11px}
+.lanepick button{flex:1;min-height:42px;border-radius:8px;font-size:13px;font-weight:600;
+  color:var(--text-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.lanepick button small{font-size:10.5px;font-weight:500;color:var(--text-muted)}
+.lanepick button[aria-pressed="true"]{background:var(--surface-2);color:var(--text-primary);box-shadow:var(--shadow)}
+.lanepick button[aria-pressed="true"] small{color:var(--text-secondary)}
+.moved{font-size:12px;color:var(--text-secondary);margin-top:9px;line-height:1.4;
+  padding-left:9px;border-left:2px solid var(--accent)}
+@media (min-width:768px){
+  .sheet{left:50%;right:auto;transform:translateX(-50%);width:560px;bottom:0;border-radius:18px 18px 0 0}
+}
+
 /* ---------- scale reference / settings ---------- */
 .scalelist{display:flex;flex-direction:column;gap:1px}
 .scaleitem{display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:1px solid var(--grid)}
@@ -432,6 +473,7 @@ svg.barchart{align-self:stretch}
 </div>
 <input type="file" id="fileIn" accept=".json,application/json" hidden>
 <input type="file" id="mergeIn" accept=".json,application/json" multiple hidden>
+<div id="sheetHost" hidden></div>
 <script>
 "use strict";
 /* ============================================================
@@ -451,7 +493,7 @@ const LEVELS = [
   ["Optimised", "Continuously improved, benchmarked, a source of advantage."]
 ];
 const KEY = "cvm-assess-v1";
-const BUILD = "1.2 \u00b7 13 Aug 2026";   // shown in Setup so you can tell builds apart
+const BUILD = "1.3 \u00b7 13 Aug 2026";   // shown in Setup so you can tell builds apart
 const AREA_BY_ID = {};
 DATA.areas.forEach(a => { AREA_BY_ID[a.id] = a; });
 const TOTAL_Q = DATA.areas.reduce((n, a) => n + a.questions.length, 0);
@@ -1294,6 +1336,180 @@ function averagedQuestions() {
 }
 
 /* ============================================================
+   IMPORT REVIEW
+
+   Nothing merges until it has been looked at. Each chosen file is read,
+   its lane split counted, and its client/title checked against this
+   assessment — then shown for confirmation.
+
+   The lane override exists because the app cannot detect the one mistake
+   it cannot recover from on its own: an assessor who was asked to complete
+   the external assessment but left the switch on Self. Their scores are
+   perfectly valid, just in the wrong lane, and only a human knows that.
+   It is offered ONLY for files whose answers sit entirely in one lane —
+   where a file has both, moving them would mean guessing which was which.
+   ============================================================ */
+
+let pendingImport = null;      // [{file, ok, sub, selfN, extN, lane, mismatch, error}]
+
+function readFiles(files, onDone) {
+  const out = [];
+  let pending = files.length;
+  files.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const sub = parsed && parsed.state ? parsed.state : parsed;
+        if (!sub || typeof sub.responses !== "object") throw new Error("not a CVM assessment export");
+        let selfN = 0, extN = 0;
+        Object.keys(sub.responses).forEach(k => {
+          const r = sub.responses[k];
+          if (!r) return;
+          if (r.sa != null) selfN++;
+          if (r.ea != null) extN++;
+        });
+        out[idx] = {
+          file: file.name, ok: true, sub: sub, selfN: selfN, extN: extN,
+          lane: "asSaved",
+          mismatch: norm(sub.client || "") !== norm(state.client) || norm(sub.title || "") !== norm(state.title)
+        };
+      } catch (err) {
+        out[idx] = { file: file.name, ok: false, error: err.message || "could not be read" };
+      }
+      if (--pending === 0) onDone(out.filter(Boolean));
+    };
+    reader.onerror = () => {
+      out[idx] = { file: file.name, ok: false, error: "could not be read" };
+      if (--pending === 0) onDone(out.filter(Boolean));
+    };
+    reader.readAsText(file);
+  });
+}
+
+/* Moves every answer and note from one lane to the other. Only ever called on
+   submissions whose answers are entirely in a single lane. */
+function swapLanes(sub, target) {
+  const out = {};
+  Object.keys(sub.responses).forEach(k => {
+    const r = sub.responses[k] || {};
+    const v = r.sa != null ? r.sa : r.ea;
+    const n = r.sac || r.eac || "";
+    out[k] = target === "self"
+      ? { sa: v == null ? null : v, ea: null, sac: n, eac: "" }
+      : { sa: null, ea: v == null ? null : v, sac: "", eac: n };
+  });
+  return Object.assign({}, sub, { responses: out });
+}
+
+const plural = (n, word) => n + " " + word + (n === 1 ? "" : "s");
+const laneLabel = it => {
+  if (it.selfN && it.extN) return it.selfN + " self, " + it.extN + " external";
+  if (it.selfN) return plural(it.selfN, "self answer");
+  if (it.extN) return plural(it.extN, "external answer");
+  return "no answers";
+};
+const singleLane = it => (it.selfN > 0) !== (it.extN > 0);   // exactly one lane used
+
+function importSheetHTML() {
+  const items = pendingImport || [];
+  const good = items.filter(i => i.ok);
+  const bad = items.filter(i => !i.ok);
+  const totalSelf = good.reduce((n, i) => n + (i.lane === "external" ? 0 : (i.lane === "self" ? i.selfN + i.extN : i.selfN)), 0);
+  const totalExt = good.reduce((n, i) => n + (i.lane === "self" ? 0 : (i.lane === "external" ? i.selfN + i.extN : i.extN)), 0);
+
+  return `<div class="sheet-backdrop" data-import="cancel"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Review submissions before merging">
+    <div class="sheet-head">
+      <h2>Review ${good.length} submission${good.length === 1 ? "" : "s"}</h2>
+      <p>Confirm which lane each one belongs in. Nothing is merged until you tap Import.</p>
+    </div>
+    <div class="sheet-body">
+      ${good.map((it, i) => `<div class="subcard ${it.mismatch ? "flagged" : ""}">
+        <div class="subcard-top">
+          <div>
+            <div class="who">${esc(it.sub.assessor || "Unnamed assessor")}</div>
+            <div class="meta">${esc(it.sub.client || "no client")} &middot; ${esc(it.sub.title || "no title")}</div>
+            <div class="meta file">${esc(it.file)}</div>
+          </div>
+          <div class="counts">${esc(laneLabel(it))}</div>
+        </div>
+        ${it.mismatch ? `<div class="flag">Labelled differently from this assessment
+          (${esc(state.client || "no client")} &middot; ${esc(state.title || "no title")}). Check before importing.</div>` : ""}
+        ${it.selfN + it.extN === 0
+          ? `<div class="flag">No answers in this file &mdash; nothing to merge.</div>`
+          : singleLane(it)
+            ? `<div class="lanepick" role="group" aria-label="Import as which assessment">
+                 <button data-lanechoice="${i}|asSaved" aria-pressed="${it.lane === "asSaved"}">
+                   As saved<small>${it.selfN ? "Self" : "External"}</small></button>
+                 <button data-lanechoice="${i}|self" aria-pressed="${it.lane === "self"}">
+                   <i class="swatch sw1"></i>Self</button>
+                 <button data-lanechoice="${i}|external" aria-pressed="${it.lane === "external"}">
+                   <i class="swatch sw2"></i>External</button>
+               </div>
+               ${it.lane !== "asSaved" && ((it.lane === "self") !== (it.selfN > 0))
+                 ? `<div class="moved">Will be moved into the
+                    ${it.lane === "self" ? "self" : "external"} assessment.</div>` : ""}`
+            : `<div class="moved">Both lanes answered &mdash; imported as saved. Moving them would mean
+                 guessing which score was which, so that is left alone deliberately.</div>`}
+      </div>`).join("")}
+      ${bad.length ? `<div class="subcard flagged">
+        <div class="who">Could not be read</div>
+        ${bad.map(b => `<div class="meta">${esc(b.file)} &mdash; ${esc(b.error)}</div>`).join("")}
+      </div>` : ""}
+    </div>
+    <div class="sheet-foot">
+      <div class="tally">This import adds <b>${totalSelf}</b> self and <b>${totalExt}</b> external answers.</div>
+      <div class="sheet-actions">
+        <button class="bigbtn" data-import="cancel">Cancel</button>
+        <button class="bigbtn primary" data-import="go" ${good.length ? "" : "disabled"}>Import ${good.length || ""}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function showImportSheet() {
+  const host = $("#sheetHost");
+  host.innerHTML = importSheetHTML();
+  host.hidden = false;
+  document.body.classList.add("sheet-open");
+}
+function hideImportSheet() {
+  const host = $("#sheetHost");
+  host.hidden = true;
+  host.innerHTML = "";
+  document.body.classList.remove("sheet-open");
+  pendingImport = null;
+}
+
+function runPendingImport() {
+  const good = (pendingImport || []).filter(i => i.ok && (i.selfN + i.extN) > 0);
+  if (!good.length) { hideImportSheet(); toast("Nothing to import"); return; }
+
+  undoSnapshot = JSON.stringify(state);
+  const results = [];
+  good.forEach(it => {
+    const sub = (it.lane === "asSaved") ? it.sub : swapLanes(it.sub, it.lane);
+    const summary = mergeSubmission(sub, it.file);
+    state.submissions.push({
+      assessor: (sub.assessor || "").trim() || "Unnamed assessor",
+      client: sub.client || "", title: sub.title || "",
+      file: it.file, at: new Date().toISOString(),
+      lane: it.lane, movedTo: it.lane === "asSaved" ? "" : it.lane,
+      summary: summary
+    });
+    results.push(summary);
+  });
+  save();
+
+  const filled = results.reduce((n, r) => n + r.filled, 0);
+  const avgd = results.reduce((n, r) => n + r.averaged, 0);
+  hideImportSheet();
+  render();
+  toast(good.length + " merged · " + filled + " added" + (avgd ? " · " + avgd + " averaged" : ""));
+}
+
+/* ============================================================
    SETUP / EXPORT
    ============================================================ */
 function renderMore() {
@@ -2017,23 +2233,29 @@ $("#mergeIn").addEventListener("change", e => {
   const files = [...(e.target.files || [])];
   e.target.value = "";
   if (!files.length) return;
-
-  inspectFiles(files, info => {
-    const warn = mismatchWarning(info);
-    if (warn && !confirm(warn)) { toast("Import cancelled"); return; }
-
-    mergeFiles(files, results => {
-      const ok = results.filter(r => r.ok), bad = results.filter(r => !r.ok);
-      const filled = ok.reduce((n, r) => n + r.summary.filled, 0);
-      const avgd = ok.reduce((n, r) => n + r.summary.averaged, 0);
-      render();
-      if (bad.length) {
-        alert("Merged " + ok.length + " of " + results.length + " files.\n\nCould not read:\n" +
-              bad.map(b => "\u2022 " + b.file + " \u2014 " + b.error).join("\n"));
-      }
-      toast(ok.length + " merged \u00b7 " + filled + " answers added" + (avgd ? " \u00b7 " + avgd + " averaged" : ""));
-    });
+  readFiles(files, items => {
+    pendingImport = items;
+    showImportSheet();
   });
+});
+
+/* Import review sheet */
+$("#sheetHost").addEventListener("click", e => {
+  const pick = e.target.closest("[data-lanechoice]");
+  if (pick) {
+    const [i, lane] = pick.dataset.lanechoice.split("|");
+    pendingImport[+i].lane = lane;
+    haptic("light");
+    showImportSheet();
+    return;
+  }
+  const act = e.target.closest("[data-import]");
+  if (!act) return;
+  if (act.dataset.import === "cancel") { hideImportSheet(); toast("Import cancelled"); return; }
+  if (act.dataset.import === "go") { runPendingImport(); return; }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("#sheetHost").hidden) { hideImportSheet(); }
 });
 
 $("#fileIn").addEventListener("change", e => {
@@ -2105,12 +2327,6 @@ window.addEventListener("orientationchange", onResize);
 
 applyTheme();
 render();
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
-  });
-}
 </script>
 </body>
 </html>
