@@ -10,7 +10,9 @@
 <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
 <title>CVM Maturity Assessment</title>
-<!-- icons come from the native app bundle -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
 :root{
   color-scheme: light;
@@ -2327,6 +2329,15 @@ window.addEventListener("orientationchange", onResize);
 
 applyTheme();
 render();
+
+/* ---------- offline install ----------
+   Registers the service worker that precaches the app so it launches
+   with no network once added to the home screen. */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* file:// or unsupported — app still works */ });
+  });
+}
 </script>
 </body>
 </html>
