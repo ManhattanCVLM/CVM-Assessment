@@ -49,11 +49,12 @@ cannot arrive filed against the wrong side.
 
 ## What is deliberately not here
 
-**Combining many contributors' submissions.** That lives in the separate, private
+**Combining many contributors' submissions.** That lives in the separate
 `CVM-Consolidation` repository, and its merging engine is **stripped from these builds at
-build time** — absent, not hidden behind a flag. These two repositories have separate
-histories for the same reason: one shared history would leave merge-capable code
-recoverable from an earlier commit.
+build time** — absent, not hidden behind a flag. The build asserts it on the built file of
+every edition, so a wiring mistake fails the build rather than shipping. These two
+repositories have separate histories for the same reason: one shared history would leave
+merge-capable code recoverable from an earlier commit.
 
 ---
 
@@ -64,7 +65,7 @@ index.html                the client app
 sw.js  manifest.webmanifest  icon-*.png
 self/                     the self edition, complete and self-contained
 external/                 the external edition
-.nojekyll                 tells Pages to serve the files as-is
+.nojekyll                 tells Pages to serve the files as-is (one per folder)
 DISTRIBUTING.md           which edition goes to whom, and what to tell assessors
 INSTALL-ON-IPHONE.md      hosting and home-screen install
 ```
@@ -89,7 +90,7 @@ three editions; there is nothing to configure per folder.
 
 1. Replace the `index.html` you are changing (root, `self/`, or `external/`)
 2. **Bump the cache version in that edition's `sw.js`** — each has its own:
-   `cvm-assess-v7` at the root, `cvm-self-v2` in `self/`, `cvm-external-v2` in `external/`
+   `cvm-assess-v8` at the root, `cvm-self-v3` in `self/`, `cvm-external-v3` in `external/`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
@@ -108,6 +109,10 @@ one client's scores inside the app would risk them appearing in another's report
 
 Deleting a home-screen icon, or "Clear History and Website Data" in Safari, clears that
 edition's answers. Export at the end of every session.
+
+An export is named for the client, the assessment title, the date **and the assessor**, so
+several contributors' files stay apart in one download folder instead of arriving as
+"(1)", "(2)" copies of one name.
 
 ---
 

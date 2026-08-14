@@ -97,8 +97,9 @@ AirDrop across to the Mac to open in Excel. The columns match the comparison
 workbook, so it drops back into your existing analysis.
 
 **Updating the app later**: replace `index.html` on the host, and change the version
-string near the top of `sw.js` (it currently reads `const CACHE = "cvm-assess-v2"` —
-make it `"cvm-assess-v3"`, and so on).
+string near the top of that edition's `sw.js` (the root one currently reads
+`const CACHE = "cvm-assess-v8"` — make it `"cvm-assess-v9"`, and so on; `self/` and
+`external/` each carry their own, and so does the consolidator in the other repository).
 That version bump is what tells installed devices to pull the new copy — without it
 they will keep happily serving the old cached one. Answers already on a device are
 untouched by an update.

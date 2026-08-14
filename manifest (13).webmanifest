@@ -1,7 +1,7 @@
 {
-  "name": "CVM Maturity Assessment",
-  "short_name": "CVM Assess",
-  "description": "Contract Value Management maturity assessment — 350 questions across 7 areas, self vs external comparison.",
+  "name": "CVM Self Assessment",
+  "short_name": "CVM Self",
+  "description": "Contract Value Management maturity — self assessment. 350 questions across 7 areas.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
