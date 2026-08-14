@@ -1,7 +1,7 @@
 /* CVM Maturity Assessment — offline service worker.
    Precaches the whole app on install, then serves cache-first so the
    app opens with no network at all. Bump CACHE when index.html changes. */
-const CACHE = "cvm-self-v2";
+const CACHE = "cvm-self-v5";
 const ASSETS = [
   "./",
   "./index.html",

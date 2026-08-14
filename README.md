@@ -29,6 +29,22 @@ never appear in another.
 
 ---
 
+## What the dashboard is called
+
+The dashboard and the report name themselves after the data they hold, not after
+the slots it sits in:
+
+| What is loaded | What you see |
+|---|---|
+| One assessment | Its own **assessment title** on the heading, the chart legend and the table column — one series, no empty second column and no gap figures |
+| Self and external together | **Self** and **External**, two series, alignment and the largest gaps |
+| Two assessments compared | **Both assessment titles**, one against the other |
+
+So an assessor running a single self assessment sees "2026 Baseline Review" on
+their charts rather than the word "Self" beside an empty "External".
+
+---
+
 ## Assessment type
 
 The client app's **Setup → Assessment type** offers three:
@@ -90,7 +106,7 @@ three editions; there is nothing to configure per folder.
 
 1. Replace the `index.html` you are changing (root, `self/`, or `external/`)
 2. **Bump the cache version in that edition's `sw.js`** — each has its own:
-   `cvm-assess-v8` at the root, `cvm-self-v3` in `self/`, `cvm-external-v3` in `external/`
+   `cvm-assess-v10` at the root, `cvm-self-v5` in `self/`, `cvm-external-v5` in `external/`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
