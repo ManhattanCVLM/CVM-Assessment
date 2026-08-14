@@ -1,127 +1,108 @@
-# CVM Maturity Assessment — installing it on the iPhone without Xcode
+# CVM Maturity Assessment
 
-This folder is the whole app. Put these files on any web address, open that address
-once in **Safari** on the iPhone or iPad, and add it to the home screen. From then on
-it behaves like an app: its own icon, full screen, no browser bars, and it works with
-no signal at all.
+Contract Value Management maturity assessment as offline mobile apps. 350 questions across
+7 assessment areas, scored 1–8, with self versus external comparison, charts, multi-assessor
+consolidation and a client-ready PDF report.
+
+Built from `CVM Maturity Assessment Comparison v1.0.xlsm`.
+
+---
+
+## Three editions, one Pages site
+
+| Edition | URL | Who it's for |
+|---|---|---|
+| **Comparison** (full) | `/` | You — both lanes, combining submissions, the client report |
+| **Self** | `/self/` | The client's own people — locked to the self assessment |
+| **External** | `/external/` | External reviewers — locked to the external assessment |
+
+Once Pages is on, those are:
 
 ```
-index.html                 the app (all 350 questions, dashboard, export)
-manifest.webmanifest       tells iOS the name, icon and full-screen behaviour
-sw.js                      caches the app on the device so it runs offline
-icon-192.png  icon-512.png  icon-512-maskable.png  apple-touch-icon.png
+https://YOUR-USERNAME.github.io/cvm-assessment/
+https://YOUR-USERNAME.github.io/cvm-assessment/self/
+https://YOUR-USERNAME.github.io/cvm-assessment/external/
 ```
 
-Upload **all** of them, keeping them in the same folder together.
+Each installs to the home screen as its **own separate app**, with its own icon, its own
+offline cache and its own stored answers. They share an origin but not a storage key, so
+scores entered in one never appear in another — verified by running all three side by side.
+
+The assessor editions have no lane switch, so a submission cannot arrive filed against the
+wrong assessment. They also cannot combine submissions or generate a client report; those
+belong to the comparison edition. See [DISTRIBUTING.md](DISTRIBUTING.md).
 
 ---
 
-## Why it needs a web address at all
+## Layout
 
-iOS will not add a home-screen icon for a file opened from the Files app — the
-"Add to Home Screen" option only exists for a real `http(s)://` page. It also
-requires **https** for the offline caching to work.
+```
+index.html                the comparison edition
+sw.js  manifest.webmanifest  icon-*.png
+self/                     the self edition, complete and self-contained
+external/                 the external edition
+.nojekyll                 tells Pages to serve the files as-is
+DISTRIBUTING.md           which edition goes to whom, and what to tell assessors
+MULTI-ASSESSOR-WORKFLOW.md  collecting and merging submissions, and the PDF report
+INSTALL-ON-IPHONE.md      hosting and home-screen install
+ios/                      optional native iOS wrapper (Xcode project)
+```
 
-That sounds like a hurdle but it's a one-off, and it costs nothing. Note what does
-*and doesn't* get published: the file you upload contains the **questions and the
-blank tool**. Every answer, score and note stays in storage on the device that typed
-it and is never sent anywhere — there is no server side to this app. So a plain
-public URL exposes your question set, not anybody's assessment results.
-
----
-
-## Option A — your own domain (probably easiest for you)
-
-You already have `brooklynsolutions.ai`. Upload this folder to it via whatever you
-normally use (cPanel file manager, FTP, your web person) as something like `/cvm/`,
-then visit `https://brooklynsolutions.ai/cvm/` on the phone.
-
-Nothing to configure — it's static files, no database, no PHP, no build step.
-
-## Option B — Netlify (free, about two minutes)
-
-1. On the Mac, go to <https://app.netlify.com/drop>
-2. Sign up / log in with a free account
-3. Drag this whole folder onto the drop area
-4. You get a URL like `https://cheerful-otter-123456.netlify.app` — that's live https
-   immediately. You can rename it in Site settings, or point your own domain at it.
-
-## Option C — GitHub Pages (free, permanent)
-
-1. Create a free account at <https://github.com>, then a new **public** repository
-2. **Add file → Upload files**, drag all the files in, Commit
-3. **Settings → Pages →** Source: *Deploy from a branch*, Branch: `main`, folder `/ (root)`, Save
-4. After a minute it's at `https://<your-username>.github.io/<repo-name>/`
+Every edition is a **single self-contained HTML file** — the questions, the charts, the
+logo and the report generator are all inside it. No build step, no dependencies, no
+server, no database.
 
 ---
 
-## Then, on the iPhone or iPad
+## Turning on GitHub Pages
 
-1. Open the URL in **Safari** — it must be Safari; Chrome and Firefox on iOS cannot
-   install to the home screen
-2. Tap the **Share** button (the square with the arrow)
-3. Scroll down, tap **Add to Home Screen**, then **Add**
-4. Close Safari and launch it from the new icon
+1. **Settings → Pages**
+2. Source: **Deploy from a branch**
+3. Branch: `main`, folder: **`/ (root)`** → **Save**
+4. Wait a minute, then open the three URLs above
 
-It opens full screen. Put the phone in airplane mode and launch it again to prove the
-offline caching worked — everything should still be there.
-
-Repeat those three steps on any other device that needs it. Each device keeps its own
-separate set of answers.
+The repository must be **public** for Pages on a free plan. One Pages site serves all
+three editions — there is nothing to configure per folder.
 
 ---
 
-## Living with it
+## Releasing a change
 
-**Your answers are stored on the device**, in the app's own storage. They survive
-closing the app, restarting the phone, and being offline. What they do *not* survive
-is deleting the home-screen icon, or "Clear History and Website Data" in Safari
-settings. So: **Setup → Export JSON backup** at the end of a session, and AirDrop or
-email it to yourself. Restoring is one tap in the same screen.
+1. Replace the `index.html` you are changing (root, `self/`, or `external/`)
+2. **Bump the cache version in that edition's `sw.js`** — each has its own:
+   `cvm-assess-v5` at the root, `cvm-self-v2` in `self/`, `cvm-external-v2` in `external/`
+3. Commit and push; Pages redeploys within a minute
 
-Because it's installed to the home screen rather than sitting in a Safari tab, iOS
-does not apply its 7-day storage eviction to it — an installed web app keeps its data
-indefinitely. Export anyway; assessments are worth more than the two seconds it costs.
-
-**The charts** on the Dashboard tab mirror the workbook: a radar (spider) profile and
-a grouped bar of Self versus External, with the Assessment Area slicer above them and a
-**By area / By subject** toggle for the workbook's two pivot levels. Tap any point or
-bar for its figures; "Show table view" gives the same numbers as text. On a phone the
-radar labels its spokes by number with a key underneath — seven names crowding the edge
-of a 390px screen is unreadable, so the numbers keep the plot big. Radar needs 14 points
-or fewer to stay legible, so at subject level pick a single area; the bar chart always
-plots every category.
-
-**Exports** use the iOS share sheet, so a CSV can go straight into Mail, Files, or
-AirDrop across to the Mac to open in Excel. The columns match the comparison
-workbook, so it drops back into your existing analysis.
-
-**Updating the app later**: replace `index.html` on the host, and change the version
-string near the top of `sw.js` (it currently reads `const CACHE = "cvm-assess-v2"` —
-make it `"cvm-assess-v3"`, and so on).
-That version bump is what tells installed devices to pull the new copy — without it
-they will keep happily serving the old cached one. Answers already on a device are
-untouched by an update.
+Step 2 is not optional. Without it, devices that already installed that edition keep
+serving their cached copy. Answers already on a device survive an update.
 
 ---
 
-## If you just want a quick look, no hosting
+## Where the data lives
 
-AirDrop `index.html` to the phone and tap it in Files. It opens and runs, so you can
-click around and see the thing. But there's no icon, no full screen, and storage in
-that preview context is not reliable — don't conduct a real assessment that way.
+There is no server side. Every score and note is stored on the device that entered it and
+is never transmitted. Two consequences:
+
+- **Publishing this repository publishes the blank tools, not anyone's results.** The
+  questions are in the HTML; the answers are not.
+- **Each device holds its own assessment.** To combine them, each assessor exports JSON
+  from Setup and sends it to you; the comparison edition merges them.
+
+Nothing is preloaded in any edition — each assessment is a different client, and shipping
+one client's scores inside the app would risk them appearing in another's report. The
+comparison edition can load the workbook's sample data on demand from **Setup → Reset**.
+
+Deleting a home-screen icon, or "Clear History and Website Data" in Safari, clears that
+edition's answers. Export at the end of every session.
 
 ---
 
-## Which version to use
+## Notes
 
-You now have three, all the same assessment:
+The 1–8 scale level names ("Not in place" … "Optimised") are a generic maturity ladder;
+the source workbook carried no definitions. They appear in the method section of every
+client report — replace them in the `LEVELS` array near the top of the script in each
+`index.html`.
 
-| | Best for |
-|---|---|
-| **This folder (hosted)** | Getting it onto phones and iPads today, including other people's, with no Mac involved |
-| **Xcode project** | A true native app in your own name; needed if you ever want it on the App Store or TestFlight |
-| **Single `.html` file** | Opening on a laptop, emailing to someone, or dropping into the Xcode project as an update |
-
-The hosted route is the one to start with. Nothing stops you doing the Xcode build
-later — they don't conflict, and the assessment file is identical in all three.
+The Manhattan CVLM logo was reconstructed from a photograph, so it is soft at large sizes.
+Replacing it with original artwork means swapping the `LOGO` data URI in each `index.html`.

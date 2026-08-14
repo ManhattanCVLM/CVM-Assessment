@@ -44,6 +44,27 @@ That same file is their backup, so it's worth them keeping a copy.
 **Setup → Combine assessments → Import & combine submissions.** Select as many files as
 you like at once.
 
+### The review step
+
+Nothing merges until you have looked at it. Each file is read and shown with:
+
+- **who sent it** and the client / assessment title it is labelled with
+- **how many answers it holds, and in which lane** — e.g. `12 self answers`
+- a **warning** if its client or title differs from the assessment you are consolidating
+- a running tally at the bottom: *"This import adds 34 self and 12 external answers"*
+
+**Confirming the lane.** For any file whose answers sit entirely in one lane, you get a
+three-way choice: **As saved · Self · External**. This is the fix for the one mistake the
+app cannot spot by itself — an assessor asked to complete the *external* assessment who
+left the switch on Self. Their scores are perfectly good, just in the wrong lane, and only
+you know that. Pick **External** and the whole submission, notes included, moves across
+before it merges.
+
+Where a file has answers in **both** lanes, no override is offered and it imports as saved.
+Moving those would mean guessing which score was which, so it is deliberately left alone.
+
+**Cancel** discards the lot and nothing is touched.
+
 The rules, exactly as you specified them:
 
 | Situation | Result |

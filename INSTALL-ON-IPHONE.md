@@ -113,6 +113,21 @@ that preview context is not reliable — don't conduct a real assessment that wa
 
 ---
 
+## The three editions
+
+This folder holds the **comparison** edition at the top level, plus `self/` and
+`external/` — assessor editions with the lane locked so a submission cannot be filed
+against the wrong assessment. Upload all of it and you get three URLs from one site:
+
+```
+/            comparison — yours
+/self/       the client's people
+/external/   external reviewers
+```
+
+Each installs as its own app with its own icon, cache and stored answers. Full detail in
+DISTRIBUTING.md.
+
 ## Which version to use
 
 You now have three, all the same assessment:
