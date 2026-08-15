@@ -29,6 +29,17 @@ never appear in another.
 
 ---
 
+## Scoring 350 questions
+
+Scoring a question scrolls the next one into view, so a full pass through an area is
+taps rather than taps and scrolls. It moves only on a question that had **no** score
+yet — changing one you have already given never pulls the page out from under you — and
+it ignores a score tap that arrives while the page is still travelling, so a fast second
+tap cannot land on the question that just slid into that spot. The end of a subject opens
+the next one. **Setup → While you score** turns it off.
+
+---
+
 ## What the dashboard is called
 
 The dashboard and the report name themselves after the data they hold, not after
@@ -106,7 +117,7 @@ three editions; there is nothing to configure per folder.
 
 1. Replace the `index.html` you are changing (root, `self/`, or `external/`)
 2. **Bump the cache version in that edition's `sw.js`** — each has its own:
-   `cvm-assess-v10` at the root, `cvm-self-v5` in `self/`, `cvm-external-v5` in `external/`
+   `cvm-assess-v11` at the root, `cvm-self-v6` in `self/`, `cvm-external-v6` in `external/`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
