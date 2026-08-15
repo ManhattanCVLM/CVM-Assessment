@@ -94,7 +94,7 @@ index.html                the client app
 sw.js  manifest.webmanifest  icon-*.png
 .nojekyll                 tells Pages to serve the files as-is
 DISTRIBUTING.md           which app goes to whom, and what to tell assessors
-INSTALL-ON-IPHONE.md      hosting and home-screen install
+INSTALLING.md             hosting, and installing on any platform
 ```
 
 The self and external apps used to live here in `self/` and `external/`. They are now
@@ -102,6 +102,29 @@ repositories of their own.
 
 Every edition is a **single self-contained HTML file** — questions, charts, logo and the
 report generator all inside it. No build step, no dependencies, no server, no database.
+
+---
+
+## Installing it
+
+It runs in **any modern browser** — Chrome, Edge, Safari, Firefox, on Windows, macOS,
+Android, iPhone or iPad. Installing is optional; it gives the app its own icon, its own
+window, and makes it work with no network.
+
+| Where | How |
+|---|---|
+| **Windows / macOS**, Chrome or Edge | The **install icon** at the right-hand end of the address bar, or ⋮ → *Cast, save and share ▸ Install page as app* |
+| **Android**, Chrome | ⋮ → **Install app** |
+| **iPhone / iPad** | **Safari** → **Share** → **Add to Home Screen** |
+| **Firefox** | No install button; it runs as an ordinary page, and still works offline |
+
+The app puts an **Install this app** button in Setup when the browser offers one, so on
+Chrome and Edge there is nothing to hunt for.
+
+iPhone and iPad are the one place where the browser matters: **no iOS browser except
+Safari can install a web app**. Chrome on iOS is Safari's engine with a different badge
+and Apple does not expose the install to it. That restriction is Apple's, and applies
+nowhere else.
 
 ---
 
@@ -119,8 +142,8 @@ on **per repository** — it is off by default on a new one.
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v12`. The other repositories
-   carry their own: `cvm-self-v7`, `cvm-external-v7`, `cvm-consolidate-v5`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v14`. The other repositories
+   carry their own: `cvm-self-v9`, `cvm-external-v9`, `cvm-consolidate-v7`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
@@ -137,8 +160,8 @@ anyone's results** — the questions are in the HTML; the answers are not.
 Nothing is preloaded in any edition: each assessment is a different client, and shipping
 one client's scores inside the app would risk them appearing in another's report.
 
-Deleting a home-screen icon, or "Clear History and Website Data" in Safari, clears that
-edition's answers. Export at the end of every session.
+Deleting the installed app, or clearing site data in the browser, clears that app's
+answers. Export at the end of every session.
 
 An export is named for the client, the assessment title, the date **and the assessor**, so
 several contributors' files stay apart in one download folder instead of arriving as

@@ -71,7 +71,10 @@ job, in `CVM-Assessment`.
 Pages is switched on **per repository** — a new repo has it off, and the site 404s until
 you turn it on under Settings → Pages.
 
-Each person opens their URL in **Safari** → **Share** → **Add to Home Screen**.
+Each person opens their URL in whatever browser they use. On Chrome or Edge the app
+offers an **Install this app** button in Setup; on an iPhone or iPad it is
+**Safari → Share → Add to Home Screen**, because Apple allows no other iOS browser to
+install a web app. Installing is optional — it works as an ordinary page either way.
 
 The `.html` files alongside are single-file copies of the same two editions, for emailing
 or opening on a laptop. They work, but with no home-screen icon and less reliable
@@ -79,7 +82,7 @@ storage — the hosted route is the one for real assessments.
 
 ## What to tell each assessor
 
-1. Open the link in Safari and add it to your home screen
+1. Open the link, and install it if offered (its own icon, and it works offline)
 2. In **Setup**, enter **your name**, and the **client** and **assessment title** exactly
    as given to you — the app nags until all three are filled
 3. Answer the sections you have been asked to cover; leave the rest blank
