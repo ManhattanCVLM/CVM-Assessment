@@ -7,25 +7,23 @@ Built from `CVM Maturity Assessment Comparison v1.0.xlsm`.
 
 ---
 
-## Three editions, one Pages site
+## Four apps, four repositories
 
-| Edition | URL | Who it's for |
+| Repository | URL | Who it's for |
 |---|---|---|
-| **Client app** | `/` | The client — score, or compare two assessments, and produce the report |
-| **Self** | `/self/` | The client's own people — locked to the self assessment |
-| **External** | `/external/` | External reviewers — locked to the external assessment |
+| **CVM-Assessment** (this one) | `/CVM-Assessment/` | The client — self against external, or two assessments compared |
+| **CVM-Assessment-Self** | `/CVM-Assessment-Self/` | The client's own people — the self assessment alone |
+| **CVM-Assessment-Ext** | `/CVM-Assessment-Ext/` | External reviewers — the external assessment alone |
+| **CVM-Consolidation** | `/CVM-Consolidation/` | You — combining many assessors into one assessment |
 
-Once Pages is on:
+Each is a separate repository with its own Pages site, so an assessor is handed a URL that
+does one job. They share the `github.io` origin but keep **separate storage keys and
+separate offline caches**, so all four can be installed on one device and none can see
+another's answers.
 
-```
-https://YOUR-USERNAME.github.io/CVM-Assessment/
-https://YOUR-USERNAME.github.io/CVM-Assessment/self/
-https://YOUR-USERNAME.github.io/CVM-Assessment/external/
-```
-
-Each installs to the home screen as its **own separate app**, with its own icon, offline
-cache and stored answers. They share an origin but not a storage key, so scores in one
-never appear in another.
+That shared origin has one useful consequence: an assessor who was using the old
+`/CVM-Assessment/self/` URL and moves to `/CVM-Assessment-Self/` **still sees their
+scores**, because the storage key did not change with the path.
 
 ---
 
@@ -69,8 +67,12 @@ assessments and every chart, table and the report compares them, **labelled by t
 assessment titles** rather than "Self" and "External". This is how a client holds last
 year's assessment against this year's.
 
-The Self and External editions have this locked and no switch at all, so a submission
-cannot arrive filed against the wrong side.
+The Self and External apps — now in their own repositories — cannot do this. Each is
+single-purpose throughout: the word "external" does not appear in the Self app and "self"
+does not appear in the External one. Each *can* compare two assessments **of its own
+kind**, labelled by their titles, which is how a client holds last year's self assessment
+against this year's without ever seeing the other kind. See
+[DISTRIBUTING.md](DISTRIBUTING.md).
 
 ---
 
@@ -90,12 +92,13 @@ merge-capable code recoverable from an earlier commit.
 ```
 index.html                the client app
 sw.js  manifest.webmanifest  icon-*.png
-self/                     the self edition, complete and self-contained
-external/                 the external edition
-.nojekyll                 tells Pages to serve the files as-is (one per folder)
-DISTRIBUTING.md           which edition goes to whom, and what to tell assessors
+.nojekyll                 tells Pages to serve the files as-is
+DISTRIBUTING.md           which app goes to whom, and what to tell assessors
 INSTALL-ON-IPHONE.md      hosting and home-screen install
 ```
+
+The self and external apps used to live here in `self/` and `external/`. They are now
+repositories of their own.
 
 Every edition is a **single self-contained HTML file** — questions, charts, logo and the
 report generator all inside it. No build step, no dependencies, no server, no database.
@@ -108,16 +111,16 @@ report generator all inside it. No build step, no dependencies, no server, no da
 2. Source: **Deploy from a branch**
 3. Branch: `main`, folder: **`/ (root)`** → **Save**
 
-The repository must be **public** for Pages on a free plan. One Pages site serves all
-three editions; there is nothing to configure per folder.
+The repository must be **public** for Pages on a free plan, and Pages has to be switched
+on **per repository** — it is off by default on a new one.
 
 ---
 
 ## Releasing a change
 
-1. Replace the `index.html` you are changing (root, `self/`, or `external/`)
-2. **Bump the cache version in that edition's `sw.js`** — each has its own:
-   `cvm-assess-v11` at the root, `cvm-self-v6` in `self/`, `cvm-external-v6` in `external/`
+1. Replace `index.html`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v12`. The other repositories
+   carry their own: `cvm-self-v7`, `cvm-external-v7`, `cvm-consolidate-v5`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.

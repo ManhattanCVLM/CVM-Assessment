@@ -1,10 +1,14 @@
-# The three editions
+# Which app goes to whom
 
-| Edition | Who gets it | Lane |
+| App | Repository / URL | Who gets it |
 |---|---|---|
-| **Self** (`self/`) | The client's own people | Locked to **self assessment** |
-| **External** (`external/`) | You and any external reviewers | Locked to **external assessment** |
-| **Full** (`index.html` in the parent folder) | You only | Both lanes, plus combining and the client report |
+| **Self** | `CVM-Assessment-Self` | The client's own people |
+| **External** | `CVM-Assessment-Ext` | You and any external reviewers |
+| **Client** | `CVM-Assessment` | The client — self against external, or two assessments compared |
+| **Consolidator** | `CVM-Consolidation` | You only — combining submissions, and the client report |
+
+Four repositories, four Pages sites, four home-screen apps. An assessor gets a URL that
+does one job and cannot be pointed at another.
 
 ## Why the assessor editions are locked
 
@@ -12,29 +16,60 @@ The lane is fixed at build time. There is no Self/External switch to leave in th
 position, so a submission physically cannot arrive filed against the wrong assessment —
 which is the one mistake the merge could not detect on its own.
 
-They also **start completely empty**, as does the full edition from build 1.4. Each
+From build 2.0 they are single-purpose all the way through, not just locked at the switch.
+The Self edition never says "external" anywhere and the External edition never says
+"self":
+
+- no **Gap ≥ 2** filter and no **Previous gap** jump — both compare the two assessments
+- one score chip per subject instead of a pair with a permanent dash
+- the other assessment's score, note and comment never appear on a question card
+- the CSV has one score column and no gap column
+- the dashboard plots one series, with no alignment card and no divergence list
+
+If a file holding both assessments is restored into one of them — the only way the other
+side's scores can reach that device — the data stays in the file but never surfaces, and
+**the export drops it**. Otherwise the consolidator would merge answers into an assessment
+that person was never asked to do, in their name.
+
+They also **start completely empty**, as does the client app. Each
 assessment is a different client, so nothing is preloaded; the full edition can load the
 workbook's sample data deliberately from **Setup → Reset**.
 
-Neither assessor edition can combine submissions or produce a client report — those are
-yours. They export their own JSON and CSV, which is all they need to do.
+Neither assessor app can combine submissions. Each can produce a PDF **of a comparison**
+it has loaded, but not of a scoring session — a submission goes back to you as JSON, and
+the client report comes from the consolidator.
 
 ## Telling them apart
 
-All three carry the Manhattan CVLM logo. The **app icons** differ by a colour band along
-the bottom: blue for Self, orange for External, none for the full edition. On a home
-screen they read as "CVM Self" and "CVM External".
+All four carry the Manhattan CVLM logo. The **app icons** differ by a colour band along
+the bottom: blue for Self, orange for External, none for the client app, navy for the
+consolidator. On a home screen they read as "CVM Self" and "CVM External".
 
 Each keeps its own separate storage and its own offline cache, so both can be installed
 on one device without interfering.
 
+## Comparing two of the same kind
+
+Each assessor app can also **compare two assessments of its own kind** — Setup → *What
+this copy is doing* → *Comparing two self assessments*. Import last year's and this
+year's; every chart and table is labelled by their titles, and the PDF report becomes
+available. A file from the other kind is refused rather than loaded under the wrong name.
+
+So the client can hold self against self, or external against external, without either
+app ever mentioning the other kind. Holding **self against external** is the client app's
+job, in `CVM-Assessment`.
+
 ## Hosting them
 
 ```
-/cvm/            → the full edition (yours)
-/cvm/self/       → hand this URL to the client's people
-/cvm/external/   → hand this URL to external reviewers
+/CVM-Assessment/         → the client app (yours and theirs)
+/CVM-Assessment-Self/    → hand this URL to the client's people
+/CVM-Assessment-Ext/     → hand this URL to external reviewers
+/CVM-Consolidation/      → yours alone
 ```
+
+Pages is switched on **per repository** — a new repo has it off, and the site 404s until
+you turn it on under Settings → Pages.
 
 Each person opens their URL in **Safari** → **Share** → **Add to Home Screen**.
 
