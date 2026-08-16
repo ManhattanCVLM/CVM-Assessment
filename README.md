@@ -128,6 +128,38 @@ nowhere else.
 
 ---
 
+## Licensing
+
+The client-facing apps — Self, External and the client app — carry a licence.
+The consolidator does not; it is the operator's own tool.
+
+**How it works.** You issue a signed key holding the client's name and an end date,
+using `CVM Licence Keys (KEEP PRIVATE).html`, which never leaves your machine. They paste
+it into **Setup → Licence**. The app verifies the signature against the public key built
+into it, and works normally until the date passes.
+
+**What happens at the end.** Scoring switches off. Everything already scored stays visible,
+and export and the PDF report still work — nobody's completed assessment is held hostage
+over a date. A new key pasted over the old one unlocks it again, with no rebuild and no
+reinstall.
+
+**With no key at all**, a copy runs until the build's own date (`BUILD_EXPIRES` in
+`build_editions.py`, currently 31 August 2027), then goes read-only the same way. That is
+the backstop for a copy that got away.
+
+**What it does not do.** It cannot *enforce* anything, and no client-side app can. The code
+is on their machine and the source is readable, so someone willing to edit the app can
+remove the check. What the signing does is make a key impossible to forge or extend — the
+private key exists only on your machine, and altering so much as the date inside a key
+breaks its signature. The device clock cannot simply be wound back either: the latest date
+the app has ever seen is stored, and time never runs backwards from it. Continuing past
+expiry takes deliberate tampering, not forgetfulness.
+
+If you ever need real enforcement, that means a server the app checks in with — which also
+means it stops working offline, which is currently one of the better things about it.
+
+---
+
 ## Turning on GitHub Pages
 
 1. **Settings → Pages**
@@ -142,8 +174,8 @@ on **per repository** — it is off by default on a new one.
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v14`. The other repositories
-   carry their own: `cvm-self-v9`, `cvm-external-v9`, `cvm-consolidate-v7`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v16`. The other repositories
+   carry their own: `cvm-self-v11`, `cvm-external-v11`, `cvm-consolidate-v9`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
@@ -175,3 +207,8 @@ The 1–8 scale level names ("Not in place" … "Optimised") are a generic matur
 the source workbook carried no definitions. They appear in the method section of every
 client report — replace them in the `LEVELS` array near the top of the script in each
 `index.html`.
+
+---
+
+© Brooklyn Solutions AI / Manhattan CVLM. All rights reserved. Published here for
+distribution to named clients; not licensed for reuse or redistribution.
