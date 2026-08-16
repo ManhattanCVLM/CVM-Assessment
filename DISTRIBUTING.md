@@ -80,13 +80,25 @@ The `.html` files alongside are single-file copies of the same two editions, for
 or opening on a laptop. They work, but with no home-screen icon and less reliable
 storage — the hosted route is the one for real assessments.
 
+## Licences
+
+The **Self** app needs a key before it will record anything: hand over the URL and the key
+together, or the person opens it and is told to contact you. The **External** and **client**
+apps run unlicensed until the build's own date, so an external reviewer can start straight
+away.
+
+Keys are per client, not per person or per device — one key covers everyone doing that
+client's self assessment, on as many devices as they like. Issue them from
+`CVM Licence Keys (KEEP PRIVATE).html`, which never goes near a repository.
+
 ## What to tell each assessor
 
 1. Open the link, and install it if offered (its own icon, and it works offline)
-2. In **Setup**, enter **your name**, and the **client** and **assessment title** exactly
+2. If you were sent a licence key, paste it into **Setup → Licence** first
+3. In **Setup**, enter **your name**, and the **client** and **assessment title** exactly
    as given to you — the app nags until all three are filled
-3. Answer the sections you have been asked to cover; leave the rest blank
-4. **Setup → Export my assessment (JSON)** and send the file back
+4. Answer the sections you have been asked to cover; leave the rest blank
+5. **Setup → Export my assessment (JSON)** and send the file back
 
 Give everyone the identical client and title. If they differ, the submission still
 imports but is flagged as belonging to a different assessment, and you confirm it by hand.

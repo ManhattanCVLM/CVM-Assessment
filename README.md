@@ -143,9 +143,11 @@ and export and the PDF report still work — nobody's completed assessment is he
 over a date. A new key pasted over the old one unlocks it again, with no rebuild and no
 reinstall.
 
-**With no key at all**, a copy runs until the build's own date (`BUILD_EXPIRES` in
-`build_editions.py`, currently 31 August 2027), then goes read-only the same way. That is
-the backstop for a copy that got away.
+**With no key**, it depends on the app. The **Self** app is locked from the first screen and
+tells the person to contact Manhattan CVLM for a key — nothing there should happen
+unlicensed. The **External** and **client** apps run until the build's own date
+(`BUILD_EXPIRES` in `build_editions.py`, currently 31 August 2027) and then go read-only.
+Set `needs_key=True` on an edition in `build_editions.py` to move it to the stricter rule.
 
 **What it does not do.** It cannot *enforce* anything, and no client-side app can. The code
 is on their machine and the source is readable, so someone willing to edit the app can
@@ -174,8 +176,8 @@ on **per repository** — it is off by default on a new one.
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v16`. The other repositories
-   carry their own: `cvm-self-v11`, `cvm-external-v11`, `cvm-consolidate-v9`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v17`. The other repositories
+   carry their own: `cvm-self-v12`, `cvm-external-v12`, `cvm-consolidate-v10`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
