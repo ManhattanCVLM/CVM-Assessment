@@ -128,6 +128,32 @@ nowhere else.
 
 ---
 
+## Who can see it
+
+**A URL on its own shows nothing.** Without a licence key the app shows its logo, its name
+and a key field — no questions, no dashboard, no tabs. The 350 questions are the product,
+and "nobody knows the URL" is not a control.
+
+**The link you send carries the key**, after the `#` so it never reaches the server or its
+logs:
+
+```
+https://YOUR-USERNAME.github.io/REPO-NAME/#lic=CVM1.eyJj…
+```
+
+They open it and are straight in — nothing to paste. The key is stored on the device and
+wiped from the address bar, so it is not left sitting in a screenshot or a shared tab.
+A key pasted into the field by hand works exactly the same.
+
+**Somebody whose key has lapsed is never locked out of their own work.** The gate is only
+for a device with no licence *and* nothing on it. If there are answers here, they get the
+read-only app instead, so they can always reach and export what they did.
+
+This is why the repositories stay public and the URLs stay reachable: that is what lets
+everyone get updates. The door is in the app, not in the hosting.
+
+---
+
 ## Licensing
 
 The client-facing apps — Self, External and the client app — carry a licence.
@@ -191,6 +217,11 @@ answers survive either way.
 browser's HTTP cache (`updateViaCache: "none"`), so a new release cannot sit unnoticed
 behind a stale copy of `sw.js`.
 
+**If the site is ever switched off** — Pages turned off, the repository made private on a
+free plan, a deploy that fails — an installed copy keeps working from its cache. The worker
+treats a 404 or a 500 as a failed fetch, not as the app, so a hosting error never replaces
+a working install. New visitors get nothing, of course.
+
 To release: replace `index.html`, **bump `const CACHE` in `sw.js`**, commit. Without the
 bump, devices keep the assets they cached — the page will be current but its icons and
 manifest will not.
@@ -204,8 +235,8 @@ storage for that origin and survive the first; the second clears them, so export
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v18`. The other repositories
-   carry their own: `cvm-self-v13`, `cvm-external-v13`, `cvm-consolidate-v11`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v20`. The other repositories
+   carry their own: `cvm-self-v15`, `cvm-external-v15`, `cvm-consolidate-v13`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
