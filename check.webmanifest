@@ -1,0 +1,32 @@
+{
+  "name": "CVM Deployment Check",
+  "short_name": "CVM Check",
+  "description": "Reads all four CVM Pages sites with the caches bypassed and reports which build each is serving.",
+  "start_url": "./check.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fcfcfb",
+  "theme_color": "#1f7a45",
+  "categories": [
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "check-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "check-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "check-icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -93,6 +93,7 @@ merge-capable code recoverable from an earlier commit.
 index.html                the client app
 sw.js  manifest.webmanifest  icon-*.png
 check.html                which build each of the four apps is serving
+check.webmanifest  check-*.png                 the checker's own install files
 .nojekyll                 tells Pages to serve the files as-is
 DISTRIBUTING.md           which app goes to whom, and what to tell assessors
 INSTALLING.md             hosting, and installing on any platform
@@ -211,9 +212,19 @@ https://YOUR-USERNAME.github.io/CVM-Assessment/check.html
 It reads all four apps the way a visitor's browser does, ignoring every cache, and shows
 which build each one is serving. If it shows you the assessment instead of a table, the file
 has not been uploaded yet — before build 3.2 a missing path fell back to serving the app. A 404 against one of them almost always means Pages is
-switched off for that repository. Worth a bookmark: it answers "did that upload land?" in
+switched off for that repository. It answers "did that upload land?" in
 one click, and it is the quickest way to tell a hosting problem from a phone that is
 holding onto a cached copy.
+
+**It installs to a home screen too**, so it is one tap rather than a bookmark. It carries
+the same Manhattan CVLM mark as the four apps with a **green band** along the bottom of the
+icon, so it sits alongside them without being mistaken for one. It has a manifest of its
+own (`check.webmanifest`) precisely so the installed icon opens the checker — an icon built
+from the app's manifest would open the assessment instead, which is exactly the confusion
+worth avoiding.
+
+`check.html`, its manifest and its icons are all produced by the build alongside the four
+apps; they are not maintained by hand in this repository. Upload all six files together.
 
 ---
 
@@ -253,8 +264,8 @@ storage for that origin and survive the first; the second clears them, so export
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v22`. The other repositories
-   carry their own: `cvm-self-v17`, `cvm-external-v17`, `cvm-consolidate-v15`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v23`. The other repositories
+   carry their own: `cvm-self-v18`, `cvm-external-v18`, `cvm-consolidate-v16`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
