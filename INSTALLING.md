@@ -116,7 +116,7 @@ workbook, so it drops back into your existing analysis.
 
 **Updating the app later**: replace `index.html` on the host, and change the version
 string near the top of that edition's `sw.js` (the root one currently reads
-`const CACHE = "cvm-assess-v20"` — make it `"cvm-assess-v21"`, and so on). The Self,
+`const CACHE = "cvm-assess-v22"` — make it `"cvm-assess-v23"`, and so on). The Self,
 External and Consolidator repositories each carry their own.
 That version bump is what tells installed devices to pull the new copy — without it
 they will keep happily serving the old cached one. Answers already on a device are
@@ -149,13 +149,12 @@ DISTRIBUTING.md.
 
 ## Which version to use
 
-You now have three, all the same assessment:
+Two, and they are the same assessment:
 
 | | Best for |
 |---|---|
-| **This folder (hosted)** | Getting it onto phones and iPads today, including other people's, with no Mac involved |
-| **Xcode project** | A true native app in your own name; needed if you ever want it on the App Store or TestFlight |
-| **Single `.html` file** | Opening on a laptop, emailing to someone, or dropping into the Xcode project as an update |
+| **This folder (hosted)** | Everyone. A URL you send, installable on any phone, laptop or tablet, and the only route that receives updates |
+| **Single `.html` file** | A copy that has to work with no URL at all — email it, keep it on a laptop. It never updates itself |
 
-The hosted route is the one to start with. Nothing stops you doing the Xcode build
-later — they don't conflict, and the assessment file is identical in all three.
+The hosted route is the one to use. There is no native app: the assessment is a web app,
+which is why one upload reaches every device and every platform at once.

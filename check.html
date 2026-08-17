@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CVM — what is deployed</title>
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;
+       padding:24px 16px 60px;background:#fbfbfa;color:#191917}
+  @media (prefers-color-scheme:dark){body{background:#141413;color:#f5f4ef}}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}
+  .sub{color:#6b6a63;font-size:13.5px;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid rgba(128,128,128,.25);vertical-align:top}
+  th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#6b6a63}
+  td.app{font-weight:650}
+  .ok{color:#1f7a45;font-weight:650}
+  .old{color:#b06a00;font-weight:650}
+  .bad{color:#b3261e;font-weight:650}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+  .note{font-size:12.5px;color:#6b6a63;line-height:1.55;margin-top:20px}
+  button{font:inherit;font-weight:650;padding:11px 18px;border-radius:11px;border:0;
+         background:#2a78d6;color:#fff;cursor:pointer;margin-bottom:18px}
+  .sw{font-size:12px;color:#6b6a63}
+</style></head><body><div class="wrap">
+<h1>What is actually deployed</h1>
+<div class="sub">Reads each site the way a visitor's browser does, bypassing every cache. Reload after a push.</div>
+<button id="again">Check again</button>
+<table>
+  <thead><tr><th>App</th><th>Build being served</th><th>Cache</th><th></th></tr></thead>
+  <tbody id="rows"><tr><td colspan="4">Checking…</td></tr></tbody>
+</table>
+<div class="note" id="note"></div>
+</div>
+<script>
+/* All four sites sit on one github.io origin, so this page can read them all.
+   cache:"no-store" is the point: it asks the server, not the browser's cupboard. */
+const APPS = [
+  { name: "Client app",   path: "../CVM-Assessment/" },
+  { name: "Self",         path: "../CVM-Assessment-Self/" },
+  { name: "External",     path: "../CVM-Assessment-Ext/" },
+  { name: "Consolidator", path: "../CVM-Consolidation/" }
+];
+const grab = async (url, re) => {
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) return { err: r.status };
+    const m = (await r.text()).match(re);
+    return { val: m ? m[1] : "not found" };
+  } catch (e) { return { err: e.message || "unreachable" }; }
+};
+async function run() {
+  document.getElementById("rows").innerHTML = '<tr><td colspan="4">Checking…</td></tr>';
+  const out = [];
+  for (const a of APPS) {
+    const [b, c] = await Promise.all([
+      grab(a.path + "index.html", /const BUILD = "([^"]+)"/),
+      grab(a.path + "sw.js", /const CACHE = "([^"]+)"/)
+    ]);
+    out.push({ ...a, build: b, cache: c });
+  }
+  const builds = out.map(o => o.build.val).filter(Boolean);
+  const newest = builds.filter(Boolean).sort().reverse()[0];
+  document.getElementById("rows").innerHTML = out.map(o => {
+    if (o.build.err) return `<tr><td class="app">${o.name}</td><td colspan="2" class="bad">
+      not being served (${o.build.err === 404 ? "404 — is Pages switched on for this repository?" : o.build.err})</td>
+      <td class="bad">&#10007;</td></tr>`;
+    const current = o.build.val === newest;
+    return `<tr><td class="app">${o.name}</td>
+      <td>${o.build.val}</td>
+      <td class="sw"><code>${o.cache.val || o.cache.err}</code></td>
+      <td class="${current ? "ok" : "old"}">${current ? "&#10003; current" : "behind"}</td></tr>`;
+  }).join("");
+  const behind = out.filter(o => !o.build.err && o.build.val !== newest).map(o => o.name);
+  const dead = out.filter(o => o.build.err).map(o => o.name);
+  document.getElementById("note").innerHTML =
+    (dead.length ? `<b>Not served:</b> ${dead.join(", ")}. A 404 here almost always means Pages is off for
+      that repository — Settings &rsaquo; Pages &rsaquo; Deploy from a branch &rsaquo; main &rsaquo; / (root).<br><br>` : "") +
+    (behind.length ? `<b>Behind:</b> ${behind.join(", ")} — upload the newer build to those repositories.<br><br>` : "") +
+    (!dead.length && !behind.length ? `<b>All four are serving ${newest}.</b><br><br>` : "") +
+    `This reads what the <i>server</i> holds. A phone that already has the app installed picks a new version up
+     on its next open; if one looks stuck, close it fully and reopen. "Behind" is judged by comparing the four
+     against each other, so it tells you they disagree, not that any particular one is out of date.`;
+}
+document.getElementById("again").onclick = run;
+run();
+</script>
+</body></html>

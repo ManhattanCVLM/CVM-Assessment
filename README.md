@@ -92,6 +92,7 @@ merge-capable code recoverable from an earlier commit.
 ```
 index.html                the client app
 sw.js  manifest.webmanifest  icon-*.png
+check.html                which build each of the four apps is serving
 .nojekyll                 tells Pages to serve the files as-is
 DISTRIBUTING.md           which app goes to whom, and what to tell assessors
 INSTALLING.md             hosting, and installing on any platform
@@ -199,6 +200,23 @@ on **per repository** — it is off by default on a new one.
 
 ---
 
+## Checking what is deployed
+
+Open **`check.html`** on the site:
+
+```
+https://YOUR-USERNAME.github.io/CVM-Assessment/check.html
+```
+
+It reads all four apps the way a visitor's browser does, ignoring every cache, and shows
+which build each one is serving. If it shows you the assessment instead of a table, the file
+has not been uploaded yet — before build 3.2 a missing path fell back to serving the app. A 404 against one of them almost always means Pages is
+switched off for that repository. Worth a bookmark: it answers "did that upload land?" in
+one click, and it is the quickest way to tell a hosting problem from a phone that is
+holding onto a cached copy.
+
+---
+
 ## How an update reaches people
 
 **The page is fetched from the network first**, with the cached copy as the fallback. So a
@@ -235,8 +253,8 @@ storage for that origin and survive the first; the second clears them, so export
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v20`. The other repositories
-   carry their own: `cvm-self-v15`, `cvm-external-v15`, `cvm-consolidate-v13`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v22`. The other repositories
+   carry their own: `cvm-self-v17`, `cvm-external-v17`, `cvm-consolidate-v15`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
