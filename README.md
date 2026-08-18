@@ -171,6 +171,29 @@ and export and the PDF report still work — nobody's completed assessment is he
 over a date. A new key pasted over the old one unlocks it again, with no rebuild and no
 reinstall.
 
+**What a key does and does not bind.** It binds a **date**, and that is enforced: the
+signature cannot be forged, editing the expiry invalidates it, and the clock cannot be
+wound back past what the device has recorded or past the build date. It does **not** bind
+the client. The name in the key is a label, not a check — the client name in Setup is free
+text, and typing a different one changes nothing about how long the licence runs. So a key
+is a bearer token: anyone holding the link can use it, until the date.
+
+That is a deliberate limit rather than an oversight, because the alternative is worse. A
+name comparison would fail on "Acme" against "Acme Holdings PLC" and generate support
+calls, and it would still be a check running on the visitor's own machine — friction, not
+enforcement. **No licence can be enforced in a browser app**; what can be done is to make
+the record accurate and misuse visible. So:
+
+- The licence card names who the key was issued to, on screen.
+- **The report footer records it too**, alongside the client name typed in Setup. If those
+  two disagree, it is visible on the page — the document evidences the licence rather than
+  just asserting a name somebody typed.
+- **A key never travels inside a data file.** Exports and CSVs carry no key, and restoring
+  a backup cannot install one. Before build 3.5 every JSON export contained a working
+  signed key in plain text, so an assessor emailing their submission handed the key to
+  whoever received it — and the consolidator collects those files from everybody. Keys
+  travel by link from you, and only from you.
+
 **With no key**, it depends on the app. The **Self** app is locked from the first screen and
 tells the person to contact Manhattan CVLM for a key — nothing there should happen
 unlicensed. The **External** and **client** apps run until the build's own date
@@ -264,8 +287,8 @@ storage for that origin and survive the first; the second clears them, so export
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v24`. The other repositories
-   carry their own: `cvm-self-v19`, `cvm-external-v19`, `cvm-consolidate-v17`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v25`. The other repositories
+   carry their own: `cvm-self-v20`, `cvm-external-v20`, `cvm-consolidate-v18`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
