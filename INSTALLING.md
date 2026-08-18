@@ -116,7 +116,7 @@ workbook, so it drops back into your existing analysis.
 
 **Updating the app later**: replace `index.html` on the host, and change the version
 string near the top of that edition's `sw.js` (the root one currently reads
-`const CACHE = "cvm-assess-v23"` — make it `"cvm-assess-v24"`, and so on). The Self,
+`const CACHE = "cvm-assess-v24"` — make it `"cvm-assess-v25"`, and so on). The Self,
 External and Consolidator repositories each carry their own.
 That version bump is what tells installed devices to pull the new copy — without it
 they will keep happily serving the old cached one. Answers already on a device are

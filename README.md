@@ -264,8 +264,8 @@ storage for that origin and survive the first; the second clears them, so export
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v23`. The other repositories
-   carry their own: `cvm-self-v18`, `cvm-external-v18`, `cvm-consolidate-v16`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v24`. The other repositories
+   carry their own: `cvm-self-v19`, `cvm-external-v19`, `cvm-consolidate-v17`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.
