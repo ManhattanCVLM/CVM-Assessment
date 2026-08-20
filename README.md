@@ -49,6 +49,12 @@ the slots it sits in:
 | Self and external together | **Self** and **External**, two series, alignment and the largest gaps |
 | Two assessments compared | **Both assessment titles**, one against the other |
 
+Comparing two assessments of the same kind over time is a different question from
+holding self against external, and the labels follow: the column is **Change** rather
+than Gap, the section is **Largest movements** rather than divergences, and the headline
+figure is **Movement** rather than alignment. "Weakest areas" is ranked on the **later**
+assessment — where they are weakest now, not where they were weakest before the work.
+
 So an assessor running a single self assessment sees "2026 Baseline Review" on
 their charts rather than the word "Self" beside an empty "External".
 
@@ -67,12 +73,17 @@ assessments and every chart, table and the report compares them, **labelled by t
 assessment titles** rather than "Self" and "External". This is how a client holds last
 year's assessment against this year's.
 
-The Self and External apps — now in their own repositories — cannot do this. Each is
+The Self and External apps cannot hold the two kinds against each other. Each is
 single-purpose throughout: the word "external" does not appear in the Self app and "self"
 does not appear in the External one. Each *can* compare two assessments **of its own
 kind**, labelled by their titles, which is how a client holds last year's self assessment
 against this year's without ever seeing the other kind. See
 [DISTRIBUTING.md](DISTRIBUTING.md).
+
+**All four editions produce the PDF report**, including a single assessment — headed with
+that assessment's own title, one series, and no gap column or divergence section, because
+there is no second assessment to diverge from. Until build 3.6 the two assessor editions
+had no report button: it had been treated as the consolidator's output, which was wrong.
 
 ---
 
@@ -287,8 +298,8 @@ storage for that origin and survive the first; the second clears them, so export
 ## Releasing a change
 
 1. Replace `index.html`
-2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v25`. The other repositories
-   carry their own: `cvm-self-v20`, `cvm-external-v20`, `cvm-consolidate-v18`
+2. **Bump `const CACHE` in `sw.js`** — currently `cvm-assess-v27`. The other repositories
+   carry their own: `cvm-self-v22`, `cvm-external-v22`, `cvm-consolidate-v20`
 3. Commit and push; Pages redeploys within a minute
 
 Without step 2, devices that already installed that edition keep serving their cached copy.

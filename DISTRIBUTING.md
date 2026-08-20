@@ -52,8 +52,12 @@ on one device without interfering.
 
 Each assessor app can also **compare two assessments of its own kind** — Setup → *What
 this copy is doing* → *Comparing two self assessments*. Import last year's and this
-year's; every chart and table is labelled by their titles, and the PDF report becomes
-available. A file from the other kind is refused rather than loaded under the wrong name.
+year's; every chart and table is labelled by their titles. A file from the other kind is
+refused rather than loaded under the wrong name.
+
+**Every edition can produce the PDF report**, including a single assessment — headed with
+that assessment's own title, one series, no gap column. So an assessor can print what they
+did without waiting for it to come back from you.
 
 So the client can hold self against self, or external against external, without either
 app ever mentioning the other kind. Holding **self against external** is the client app's
